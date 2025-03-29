@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { 
   Home, 
-  HandHoldingHeart, 
+  Heart, 
   Truck, 
   Users, 
   BarChart2, 
@@ -20,7 +20,7 @@ const Sidebar = () => {
   
   const navItems = [
     { path: '/dashboard', icon: <Home className="w-5 h-5 mr-3" />, label: 'Dashboard' },
-    { path: '/request', icon: <HandHoldingHeart className="w-5 h-5 mr-3" />, label: 'Request Aid' },
+    { path: '/request', icon: <Heart className="w-5 h-5 mr-3" />, label: 'Request Aid' },
     { path: '/distribution', icon: <Truck className="w-5 h-5 mr-3" />, label: 'Distribution' },
     { path: '/beneficiaries', icon: <Users className="w-5 h-5 mr-3" />, label: 'Beneficiaries' },
     { path: '/analytics', icon: <BarChart2 className="w-5 h-5 mr-3" />, label: 'Reports & Analytics' },
