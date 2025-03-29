@@ -1,8 +1,18 @@
-import React from 'react';
-import { Link } from 'wouter';
+import React, { useEffect } from 'react';
+import { Link, useLocation } from 'wouter';
 import { Heart, Package, MapPin } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
 
 const LandingPage = () => {
+  const { isAuthenticated } = useUser();
+  const [, setLocation] = useLocation();
+  
+  // If user is already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, setLocation]);
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-12">

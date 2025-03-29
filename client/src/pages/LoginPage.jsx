@@ -1,19 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useUser } from '@/context/UserContext';
+import { useToast } from '@/hooks/use-toast';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [, setLocation] = useLocation();
+  const { login, isAuthenticated } = useUser();
+  const { toast } = useToast();
+  
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, setLocation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // In a real app, this would make an API call
-    // For now, we'll simulate login and redirect
-    if (email && password) {
+    const result = login(email, password);
+    
+    if (result.success) {
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${result.user.name}!`,
+      });
       setLocation('/dashboard');
+    } else {
+      toast({
+        title: "Login failed",
+        description: result.message || "Invalid email or password",
+        variant: "destructive"
+      });
     }
   };
 

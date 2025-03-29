@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
-import { Link } from 'wouter';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'wouter';
 import { countries } from '@/data';
+import { useUser } from '@/context/UserContext';
+import { useToast } from '@/hooks/use-toast';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    accountType: '',
+    role: 'Beneficiary',
     name: '',
-    contact: '',
+    email: '',
+    phone: '',
     country: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    bio: ''
   });
+  
+  const [, setLocation] = useLocation();
+  const { register, isAuthenticated } = useUser();
+  const { toast } = useToast();
+  
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, setLocation]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,9 +35,42 @@ const RegisterPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // In a real app, this would make an API call
-    // For now, we'll just log the data
-    console.log(formData);
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Registration failed",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Register the user
+    const userData = {
+      role: formData.role,
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      country: formData.country,
+      phone: formData.phone,
+      bio: formData.bio
+    };
+    
+    const result = register(userData);
+    
+    if (result.success) {
+      toast({
+        title: "Registration successful",
+        description: `Welcome, ${result.user.name}!`,
+      });
+      setLocation('/dashboard');
+    } else {
+      toast({
+        title: "Registration failed",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -34,20 +82,20 @@ const RegisterPage = () => {
         
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-1">SELECT TYPE:</label>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">SELECT TYPE:</label>
             <select 
-              id="accountType" 
-              name="accountType"
+              id="role" 
+              name="role"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              value={formData.accountType}
+              value={formData.role}
               onChange={handleChange}
               required
             >
-              <option value="" disabled>Select account type</option>
-              <option value="ngo">NGO / Organization</option>
-              <option value="warehouse">Warehouse Manager</option>
-              <option value="transport">Transport Team</option>
-              <option value="volunteer">Volunteer</option>
+              <option value="Beneficiary">Beneficiary</option>
+              <option value="NGO">NGO / Organization</option>
+              <option value="Warehouse">Warehouse Manager</option>
+              <option value="Transport">Transport Team</option>
+              <option value="Volunteer">Volunteer</option>
             </select>
           </div>
           
@@ -66,16 +114,29 @@ const RegisterPage = () => {
           </div>
           
           <div>
-            <label htmlFor="contact" className="block text-sm font-medium text-gray-700 mb-1">EMAIL/PHONE NUMBER:</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">EMAIL:</label>
             <input 
-              type="text" 
-              id="contact" 
-              name="contact"
+              type="email" 
+              id="email" 
+              name="email"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
-              placeholder="Enter email or phone number"
-              value={formData.contact}
+              placeholder="Enter your email"
+              value={formData.email}
               onChange={handleChange}
               required
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">PHONE NUMBER:</label>
+            <input 
+              type="text" 
+              id="phone" 
+              name="phone"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+              placeholder="Enter your phone number"
+              value={formData.phone}
+              onChange={handleChange}
             />
           </div>
           
@@ -96,6 +157,19 @@ const RegisterPage = () => {
                 </option>
               ))}
             </select>
+          </div>
+          
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">BRIEF DESCRIPTION:</label>
+            <textarea 
+              id="bio" 
+              name="bio"
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+              placeholder="Tell us about yourself or your organization"
+              value={formData.bio}
+              onChange={handleChange}
+            />
           </div>
           
           <div>

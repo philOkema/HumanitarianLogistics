@@ -28,8 +28,8 @@ const Sidebar = () => {
   ];
   
   const footerItems = [
-    { path: '#', icon: <MessageSquare className="w-5 h-5 mr-3" />, label: 'Feedback' },
-    { path: '#', icon: <Info className="w-5 h-5 mr-3" />, label: 'About Us' }
+    { path: '/feedback', icon: <MessageSquare className="w-5 h-5 mr-3" />, label: 'Feedback' },
+    { path: '/about', icon: <Info className="w-5 h-5 mr-3" />, label: 'About Us' }
   ];
 
   return (
