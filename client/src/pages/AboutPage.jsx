@@ -93,7 +93,7 @@ const AboutPage = () => {
             <p className="text-gray-700 mb-2">
               For partnerships, volunteer opportunities, or general inquiries:
             </p>
-            <p className="font-medium">contact@hads.org | +1 (123) 456-7890</p>
+            <p className="font-medium">contact@hads.org | +254742537347</p>
           </div>
         </div>
       </div>
