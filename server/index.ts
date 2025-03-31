@@ -60,11 +60,18 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+   // The reusePort option is not supported on Windows, so we'll use a more compatible approach
+  const serverOptions = {
+  port,
+  host: "0.0.0.0"
+  };
+
+// Add reusePort option only for platforms that support it (not Windows)
+  if (process.platform !== 'win32') {
+  Object.assign(serverOptions, { reusePort: true });
+  }
+
+  server.listen(serverOptions, () => {
+  log(`serving on port ${port}`);
+ });
 })();
