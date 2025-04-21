@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
 import BeneficiariesTable from '@/components/tables/BeneficiariesTable';
 import { beneficiaries } from '@/data';
 
@@ -10,14 +9,12 @@ const BeneficiariesPage = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <BeneficiariesTable 
-          beneficiaries={beneficiaries} 
-          onAddBeneficiary={handleAddBeneficiary} 
-        />
-      </div>
-    </MainLayout>
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <BeneficiariesTable 
+        beneficiaries={beneficiaries} 
+        onAddBeneficiary={handleAddBeneficiary} 
+      />
+    </div>
   );
 };
 

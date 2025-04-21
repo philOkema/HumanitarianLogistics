@@ -2,7 +2,6 @@ import { pgTable, text, serial, integer, date, timestamp, varchar, boolean } fro
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -10,13 +9,12 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   phone: text("phone"),
   country: text("country"),
-  role: text("role").notNull().default("user"), // user, admin, volunteer, ngo
+  role: text("role").notNull().default("guest"), // admin, staff, volunteer, donor, beneficiary, guest
   bio: text("bio"),
   uniqueId: text("unique_id"),
   organization: text("organization"),
 });
 
-// Aid Requests
 export const aidRequests = pgTable("aid_requests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -28,17 +26,17 @@ export const aidRequests = pgTable("aid_requests", {
   requestDate: timestamp("request_date").notNull().defaultNow(),
 });
 
-// Inventory
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
-  itemId: text("item_id").notNull(),
-  itemName: text("item_name").notNull(),
-  category: text("category").notNull(),
+  name: text("name").notNull(),
   quantity: integer("quantity").notNull(),
+  category: text("category").notNull(),
+  locationId: integer("location_id"),
+  expiryDate: timestamp("expiry_date"),
+  unit: text("unit").notNull(),
   lastUpdate: timestamp("last_update").notNull().defaultNow(),
 });
 
-// Distributions
 export const distributions = pgTable("distributions", {
   id: serial("id").primaryKey(),
   date: date("date").notNull(),
@@ -46,7 +44,6 @@ export const distributions = pgTable("distributions", {
   aidType: text("aid_type").notNull(),
   quantity: integer("quantity").notNull(),
 });
-
 // Beneficiaries
 export const beneficiaries = pgTable("beneficiaries", {
   id: serial("id").primaryKey(),
@@ -55,7 +52,6 @@ export const beneficiaries = pgTable("beneficiaries", {
   futureNeeds: text("future_needs"),
 });
 
-// Volunteer Applications
 export const volunteerApplications = pgTable("volunteer_applications", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -68,56 +64,57 @@ export const volunteerApplications = pgTable("volunteer_applications", {
   status: text("status").notNull().default("pending"),
 });
 
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  name: true,
-  email: true,
-  password: true,
-  phone: true,
-  country: true,
-  role: true,
-  bio: true,
-  organization: true,
+export const insertUserSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  password: z.string().min(6),
+  phone: z.string().optional(),
+  country: z.string().optional(),
+  role: z.string().default("guest"),
+  bio: z.string().optional(),
+  uniqueId: z.string().optional(),
+  organization: z.string().optional(),
 });
 
-export const insertAidRequestSchema = createInsertSchema(aidRequests).pick({
-  userId: true,
-  name: true,
-  location: true,
-  aidType: true,
-  urgency: true,
+export const insertAidRequestSchema = z.object({
+  userId: z.number().optional(),
+  name: z.string(),
+  location: z.string(),
+  aidType: z.string(),
+  urgency: z.string(),
 });
 
-export const insertInventorySchema = createInsertSchema(inventory).pick({
-  itemId: true,
-  itemName: true,
-  category: true,
-  quantity: true,
+export const insertInventorySchema = z.object({
+  name: z.string(),
+  quantity: z.number(),
+  category: z.string(),
+  locationId: z.number().optional(),
+  expiryDate: z.date().optional(),
+  unit: z.string(),
 });
 
-export const insertDistributionSchema = createInsertSchema(distributions).pick({
-  date: true,
-  location: true,
-  aidType: true,
-  quantity: true,
+export const insertDistributionSchema = z.object({
+  date: z.date(),
+  location: z.string(),
+  aidType: z.string(),
+  quantity: z.number(),
 });
 
-export const insertBeneficiarySchema = createInsertSchema(beneficiaries).pick({
-  name: true,
-  aidHistory: true,
-  futureNeeds: true,
+export const insertBeneficiarySchema = z.object({
+  name: z.string(),
+  aidHistory: z.string().optional(),
+  futureNeeds: z.string().optional(),
 });
 
-export const insertVolunteerApplicationSchema = createInsertSchema(volunteerApplications).pick({
-  name: true,
-  email: true,
-  organization: true,
-  role: true,
-  country: true,
-  bio: true,
+export const insertVolunteerApplicationSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  organization: z.string().optional(),
+  role: z.string().optional(),
+  country: z.string().optional(),
+  bio: z.string().optional(),
 });
 
-// Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 

@@ -1,121 +1,93 @@
-import React, { useState } from 'react';
-import { Link } from 'wouter';
-import MainLayout from '@/components/layout/MainLayout';
-import { aidTypes, urgencyLevels } from '@/data';
+import React from 'react';
+import { Link, useLocation } from 'wouter';
+import AidRequestForm from '@/components/aid-request/AidRequestForm';
+import AidRequestList from '@/components/aid-request/AidRequestList';
+import AidRequestTracker from '@/components/aid-request/AidRequestTracker';
+import { useAidRequest } from '../context/AidRequestContext';
+import { useUser } from '../context/UserContext';
+import { Loader2 } from 'lucide-react';
 
 const RequestPage = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    location: '',
-    aidType: '',
-    urgency: ''
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const { loading: aidRequestLoading, error } = useAidRequest();
+  const { user, hasPermission, loading: userLoading } = useUser();
+  const [location, setLocation] = useLocation();
+  
+  const getRequestId = () => {
+    const matches = location.match(/\/request\/([^/]+)/);
+    return matches ? matches[1] : null;
   };
+  
+  const requestId = getRequestId();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // In a real app, this would make an API call
-    // For now, we'll just log the data
-    console.log(formData);
+  if (userLoading || aidRequestLoading) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const renderContent = () => {
+    if (location === '/request/new') {
+      return hasPermission('create_aid_request') ? (
+        <AidRequestForm 
+          onRequestSubmitted={() => {
+            setLocation('/request');
+          }}
+        />
+      ) : (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+          <p className="text-yellow-700">You don't have permission to create aid requests.</p>
+        </div>
+      );
+    } else if (requestId) {
+      return hasPermission('view_aid_requests') ? (
+        <AidRequestTracker requestId={requestId} />
+      ) : (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+          <p className="text-yellow-700">You don't have permission to view this aid request.</p>
+        </div>
+      );
+    } else {
+      return hasPermission('view_aid_requests') ? (
+        <AidRequestList />
+      ) : (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+          <p className="text-yellow-700">You don't have permission to view aid requests.</p>
+        </div>
+      );
+    }
   };
-
+  
   return (
-    <MainLayout>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-center mb-6">Request Aid</h2>
-        
-        <form className="max-w-md mx-auto space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input 
-              type="text" 
-              id="name" 
-              name="name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
-              placeholder="Enter your Name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <input 
-              type="text" 
-              id="location" 
-              name="location"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
-              placeholder="Enter your Location"
-              value={formData.location}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="aidType" className="block text-sm font-medium text-gray-700 mb-1">Type of Aid Needed</label>
-            <select 
-              id="aidType" 
-              name="aidType"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              value={formData.aidType}
-              onChange={handleChange}
-              required
-            >
-              <option value="" disabled>Select Type of Aid</option>
-              {aidTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="urgency" className="block text-sm font-medium text-gray-700 mb-1">Urgency Level</label>
-            <select 
-              id="urgency" 
-              name="urgency"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              value={formData.urgency}
-              onChange={handleChange}
-              required
-            >
-              <option value="" disabled>Select Urgency Level</option>
-              {urgencyLevels.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="pt-4">
-            <button 
-              type="submit" 
-              className="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-6 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-            >
-              SUBMIT AID REQUEST
-            </button>
-          </div>
-        </form>
-        
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Want to Volunteer? 
-            <Link to="/volunteer" className="text-primary font-medium ml-1">
-              Apply
-            </Link>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Aid Requests</h1>
+          <p className="text-sm text-gray-500">
+            {requestId ? 'View details of an aid request' : 
+             location === '/request/new' ? 'Submit a new aid request' : 
+             'Manage and track aid requests'}
           </p>
         </div>
+        
+        {!requestId && location !== '/request/new' && hasPermission('create_aid_request') && (
+          <Link href="/request/new">
+            <button className="mt-4 md:mt-0 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              New Request
+            </button>
+          </Link>
+        )}
       </div>
-    </MainLayout>
+      
+      {error ? (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4">
+          <p className="text-red-700">{error}</p>
+        </div>
+      ) : (
+        renderContent()
+      )}
+    </div>
   );
 };
 

@@ -12,14 +12,16 @@ const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex flex-col md:flex-row gap-6 container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        <div className="flex-1">
+        <div className="flex flex-col flex-1 overflow-hidden">
           <Header />
-          <div className="mt-6">
-            {children}
-          </div>
+          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
         </div>
       </div>
     </div>

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { countries } from '@/data';
-import { useUser } from '@/context/UserContext';
-import { useToast } from '@/hooks/use-toast';
+import { countries } from '../data';
+import { useUser } from '../context/UserContext';
+import { useToast } from '../hooks/use-toast';
 
 const RegisterPage = () => {
-  const [formData, setFormData] = useState({
-    role: 'Beneficiary',
+  const initialFormData = {
+    role: 'beneficiary',
     name: '',
     email: '',
     phone: '',
@@ -14,29 +14,25 @@ const RegisterPage = () => {
     password: '',
     confirmPassword: '',
     bio: ''
-  });
+  };
   
+  const [formData, setFormData] = useState(initialFormData);
   const [, setLocation] = useLocation();
-  const { register, isAuthenticated } = useUser();
+  const { register } = useUser();
   const { toast } = useToast();
-  
-  // If already authenticated, redirect to dashboard
-  useEffect(() => {
-    if (isAuthenticated) {
-      setLocation('/dashboard');
-    }
-  }, [isAuthenticated, setLocation]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Register form submitted', formData);
     
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
+      console.log('Passwords do not match');
       toast({
         title: "Registration failed",
         description: "Passwords do not match",
@@ -45,34 +41,35 @@ const RegisterPage = () => {
       return;
     }
     
-    // Register the user
-    const userData = {
-      role: formData.role,
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      country: formData.country,
-      phone: formData.phone,
-      bio: formData.bio
-    };
-    
-    const result = register(userData);
-    
-    if (result.success) {
+    try {
+      console.log('Attempting to register...');
+      await register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        role: formData.role
+      });
+      
+      console.log('Registration successful');
       toast({
         title: "Registration successful",
-        description: `Welcome, ${result.user.name}!`,
+        description: `Welcome, ${formData.name}!`,
       });
-      setLocation('/dashboard');
-    } else {
+      
+      // Check if there's a stored redirect URL, otherwise go to home
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+      sessionStorage.removeItem('redirectAfterLogin');
+      setLocation(redirectUrl || '/home');
+    } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration failed",
-        description: result.message,
+        description: error.message || "Registration failed. Please try again.",
         variant: "destructive"
       });
     }
   };
-
+    
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12">
       <div className="max-w-md w-full mx-auto bg-white rounded-lg shadow-md overflow-hidden p-8">
@@ -91,14 +88,15 @@ const RegisterPage = () => {
               onChange={handleChange}
               required
             >
-              <option value="Beneficiary">Beneficiary</option>
-              <option value="NGO">NGO / Organization</option>
-              <option value="Warehouse">Warehouse Manager</option>
-              <option value="Transport">Transport Team</option>
-              <option value="Volunteer">Volunteer</option>
+              <option value="admin">Admin</option>
+              <option value="beneficiary">Beneficiary</option>
+              <option value="staff">Staff</option>
+              <option value="volunteer">Volunteer</option>
+              <option value="donor">Donor</option>
+              <option value="guest">Guest</option>
             </select>
           </div>
-          
+
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">NAME:</label>
             <input 
@@ -112,7 +110,7 @@ const RegisterPage = () => {
               required
             />
           </div>
-          
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">EMAIL:</label>
             <input 
@@ -126,7 +124,7 @@ const RegisterPage = () => {
               required
             />
           </div>
-          
+
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">PHONE NUMBER:</label>
             <input 
@@ -139,7 +137,7 @@ const RegisterPage = () => {
               onChange={handleChange}
             />
           </div>
-          
+
           <div>
             <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">COUNTRY:</label>
             <select 
@@ -158,7 +156,7 @@ const RegisterPage = () => {
               ))}
             </select>
           </div>
-          
+
           <div>
             <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">BRIEF DESCRIPTION:</label>
             <textarea 
@@ -171,7 +169,7 @@ const RegisterPage = () => {
               onChange={handleChange}
             />
           </div>
-          
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">PASSWORD:</label>
             <input 
@@ -185,7 +183,7 @@ const RegisterPage = () => {
               required
             />
           </div>
-          
+
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">CONFIRM PASSWORD:</label>
             <input 
@@ -199,7 +197,7 @@ const RegisterPage = () => {
               required
             />
           </div>
-          
+
           <div>
             <button 
               type="submit" 
@@ -213,7 +211,7 @@ const RegisterPage = () => {
         <div className="mt-6 text-sm text-center text-gray-700">
           Already have an account? 
           <Link to="/login" className="text-primary hover:text-primary/80 font-medium ml-1">
-            SignIn
+            Sign In
           </Link>
         </div>
       </div>

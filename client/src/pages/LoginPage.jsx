@@ -1,38 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { useUser } from '@/context/UserContext';
-import { useToast } from '@/hooks/use-toast';
+import { useUser } from '../context/UserContext';
+import { useToast } from '../hooks/use-toast';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const { login } = useUser();
   const [, setLocation] = useLocation();
-  const { login, isAuthenticated } = useUser();
   const { toast } = useToast();
-  
-  // If already authenticated, redirect to dashboard
-  useEffect(() => {
-    if (isAuthenticated) {
-      setLocation('/dashboard');
-    }
-  }, [isAuthenticated, setLocation]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const result = login(email, password);
-    
-    if (result.success) {
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${result.user.name}!`,
-      });
-      setLocation('/dashboard');
-    } else {
+    console.log('Login form submitted', { email, password });
+    try {
+      console.log('Attempting to login...');
+      await login({ email, password });
+      console.log('Login successful');
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/home';
+      sessionStorage.removeItem('redirectAfterLogin');
+      setLocation(redirectPath);
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Login failed",
-        description: result.message || "Invalid email or password",
+        description: error.message || "Invalid email or password",
         variant: "destructive"
       });
     }
@@ -72,20 +65,22 @@ const LoginPage = () => {
             />
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input 
-                id="remember-me" 
-                type="checkbox" 
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">Remember Me</label>
-            </div>
-            
-            <div className="text-sm">
-              <a href="#" className="text-primary hover:text-primary/80">Forgot password?</a>
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input 
+                  id="remember-me" 
+                  type="checkbox" 
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">Remember Me</label>
+              </div>
+              
+              <div className="text-sm">
+                <a href="#" className="text-primary hover:text-primary/80">Forgot password?</a>
+              </div>
             </div>
           </div>
           

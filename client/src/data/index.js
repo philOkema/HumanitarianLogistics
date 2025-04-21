@@ -14,6 +14,15 @@ export const recentDistributions = [
   { date: '2023-07-22', location: 'Turkana', aidType: 'Medical Supplies', quantity: '3000 Units' }
 ];
 
+export const fetchDashboardData = async () => {
+  // In a real application, this would fetch data from an API
+  // For now, we'll return the static data
+  return {
+    stats,
+    recentDistributions
+  };
+};
+
 export const inventoryItems = [
   { itemId: 'ID-1001', itemName: 'Blankets', category: 'Clothing', quantity: 5000, lastUpdate: '2023-07-12' },
   { itemId: 'ID-1002', itemName: 'Blankets', category: 'Clothing', quantity: 3000, lastUpdate: '2023-07-15' },

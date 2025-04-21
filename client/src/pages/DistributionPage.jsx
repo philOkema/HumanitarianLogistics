@@ -1,31 +1,31 @@
-import React, { useState } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import DistributionMap from '@/components/maps/DistributionMap';
-import SearchInput from '@/components/ui/SearchInput';
+import React from 'react';
+import DistributionManagement from '@/components/distribution/DistributionManagement';
+import { useDistribution } from '../context/DistributionContext';
 
 const DistributionPage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-
+  const { loading, error } = useDistribution();
+  
   return (
-    <MainLayout>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-6">Aid Distribution</h2>
-        
-        <h3 className="text-sm font-medium text-gray-500 mb-4">Overall distributions</h3>
-        
-        <div className="mb-6">
-          <SearchInput 
-            placeholder="Search a Location" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="aspect-w-16 aspect-h-9 mb-6 bg-gray-100 rounded-lg overflow-hidden">
-          <DistributionMap />
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Aid Distribution</h1>
+          <p className="text-sm text-gray-500">Manage and track aid distributions to beneficiaries</p>
         </div>
       </div>
-    </MainLayout>
+      
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4">
+          <p className="text-red-700">{error}</p>
+        </div>
+      ) : (
+        <DistributionManagement />
+      )}
+    </div>
   );
 };
 

@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useUser } from '@/context/UserContext';
+import { useAuth } from '@/hooks/use-auth';
 
 const Header = () => {
   const [location] = useLocation();
-  const { currentUser, logout } = useUser();
+  const { user } = useUser();
+  const { logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   
@@ -38,101 +40,87 @@ const Header = () => {
     setDropdownOpen(false);
   };
   
-  // Get initials from name
+  // Get initials from name or username or email
   const getInitials = (name) => {
     if (!name) return '?';
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+    
+    // Handle case where name is a string that can be split
+    try {
+      return name
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase();
+    } catch (e) {
+      // If splitting fails, just take the first character
+      return name.charAt(0).toUpperCase();
+    }
   };
-
+  
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">HADS</h1>
-          <div className="flex items-center space-x-6">
-            {navItems.map((item, index) => (
-              <Link
-                key={index}
-                to={item.path}
-                className={isActive(item.path) ? "text-primary font-medium text-sm" : "text-gray-700 hover:text-primary text-sm font-medium"}
-              >
-                {item.label}
-              </Link>
-            ))}
-            
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center space-x-2 focus:outline-none"
-              >
-                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-white">
-                  {currentUser ? (
-                    <span className="text-xs font-medium">{getInitials(currentUser.name)}</span>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  )}
-                </div>
-                {currentUser && (
-                  <span className="text-sm text-gray-700 hidden md:block">
-                    {currentUser.name.split(' ')[0]}
-                  </span>
-                )}
-              </button>
-              
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            {/* <div className="flex-shrink-0 flex items-center">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">HADS</h1>
+            </div> */}
+            <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    isActive(item.path)
+                      ? 'border-primary-500 text-gray-900 dark:text-white'
+                      : 'border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            <div className="ml-3 relative" ref={dropdownRef}>
+              <div>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="max-w-xs bg-white dark:bg-gray-800 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  <span className="sr-only">Open user menu</span>
+                  <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
+                    {getInitials(user?.name || user?.email || '')}
+                  </div>
+                </button>
+              </div>
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-xl z-20">
-                  {currentUser ? (
-                    <>
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
-                        <p className="text-xs text-gray-500">{currentUser.email}</p>
-                      </div>
-                      <Link 
-                        to="/profile" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Profile
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link 
-                        to="/login" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Login
-                      </Link>
-                      <Link 
-                        to="/register" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Register
-                      </Link>
-                    </>
-                  )}
+                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <Link
+                    to="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Your Profile
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Settings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Sign out
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 
