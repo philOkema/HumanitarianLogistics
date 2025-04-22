@@ -9,7 +9,7 @@ const InventoryPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Inventory Management</h1>
+          <h1 className="text-2xl text-white font-bold">Inventory Management</h1>
           <p className="text-sm text-gray-500">Manage inventory items, track stock levels, and monitor expiring items</p>
         </div>
       </div>

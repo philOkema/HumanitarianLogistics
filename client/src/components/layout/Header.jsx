@@ -15,6 +15,7 @@ const Header = () => {
   };
   
   const navItems = [
+    { path: '/home', label: 'Home'},
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/distribution', label: 'Distribution' },
     { path: '/request', label: 'Requests' },
@@ -61,10 +62,7 @@ const Header = () => {
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex">
-            {/* <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">HADS</h1>
-            </div> */}
+          <div className="flex-1 flex justify-center">
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {navItems.map((item) => (
                 <Link

@@ -18,7 +18,7 @@ service cloud.firestore {
     }
     
     function isValidRole() {
-      return request.resource.data.role in ['admin', 'staff', 'donor', 'beneficiary'];
+      return request.resource.data.role in ['admin', 'staff', 'donor', 'beneficiary', 'volunteer', 'guest'];
     }
 
     // Users collection rules

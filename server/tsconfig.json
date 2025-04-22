@@ -16,10 +16,10 @@
       "@/*": ["src/*"],
       "@shared/*": ["../shared/*"]
     },
-    "typeRoots": [
-      "./node_modules/@types",
-      "../shared"
-    ]
+    // "typeRoots": [
+    //   "./node_modules/@types",
+    //   "../shared"
+    // ]
   },
   "include": [
     "**/*.ts",

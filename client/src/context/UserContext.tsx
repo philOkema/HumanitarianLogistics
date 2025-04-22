@@ -4,13 +4,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../hooks/use-auth';
 
-export type UserRole = 'admin' | 'staff' | 'donor' | 'beneficiary' | 'volunteer';
+export type UserRole = 'admin' | 'staff' | 'donor' | 'beneficiary' | 'volunteer' | 'guest';
 export const USER_ROLES = {
   ADMIN: 'admin',
   STAFF: 'staff',
   DONOR: 'donor',
   BENEFICIARY: 'beneficiary',
-  VOLUNTEER: 'volunteer'
+  VOLUNTEER: 'volunteer',
+  GUEST: 'guest'
 } as const;
 
 export interface User extends FirebaseUser {
@@ -73,7 +74,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: userData.role || 'donor', // Default to donor if no role specified
             createdAt: userData.createdAt?.toDate() || new Date(),
             lastLogin: userData.lastLogin?.toDate() || new Date(),
-            permissions: userData.permissions || []
+            permissions: userData.permissions || getDefaultPermissions(userData.role || 'donor')
           };
           setUser(userWithRole);
           setError(null);
@@ -111,13 +112,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Check if user has explicit permission
     if (user.permissions?.includes(permission)) return true;
+    if (user.permissions?.includes('*')) return true; // Admin has all permissions
     
     // Check role-based permissions
     switch (user.role) {
       case 'admin':
         return true; // Admin has all permissions
       case 'staff':
-        return ['read', 'write', 'manage_inventory', 'manage_distributions'].includes(permission);
+        return ['read', 'write', 'manage_inventory', 'manage_distributions', 'create_aid_request', 'view_aid_requests'].includes(permission);
       case 'donor':
         return ['read', 'create_donation', 'view_donations'].includes(permission);
       case 'volunteer':
@@ -125,7 +127,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       case 'beneficiary':
         return ['read', 'view_aid_requests', 'create_aid_request'].includes(permission);
       default:
-        return false;
+        return ['read'].includes(permission); // Guest users only have read permission
     }
   }, [user]);
 
@@ -147,3 +149,21 @@ export const useUser = () => {
   }
   return context;
 };
+
+// Helper function to get default permissions based on role
+function getDefaultPermissions(role: UserRole): string[] {
+  switch (role) {
+    case 'admin':
+      return ['*']; // Admin has all permissions
+    case 'staff':
+      return ['read', 'write', 'manage_inventory', 'manage_distributions', 'create_aid_request', 'view_aid_requests'];
+    case 'donor':
+      return ['read', 'create_donation', 'view_donations'];
+    case 'volunteer':
+      return ['read', 'create_distribution', 'view_distributions', 'manage_distributions'];
+    case 'beneficiary':
+      return ['read', 'view_aid_requests', 'create_aid_request'];
+    default:
+      return ['read'];
+  }
+}

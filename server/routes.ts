@@ -7,6 +7,13 @@ import { storage } from "./storage.js";
 import { insertInventorySchema, insertAidRequestSchema, User } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth.js";
+import * as admin from 'firebase-admin';
+import { 
+  type InsertInventory, 
+  type InsertAidRequest,
+  type Inventory,
+  type AidRequest
+} from "@shared/schema";
 
 // Role-based access control middleware
 const hasRole = (roles: string[]) => {
@@ -45,7 +52,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/distributions/:id", async (req, res) => {
     try {
-      const distributionId = parseInt(req.params.id);
+      const distributionId = req.params.id;
       const distribution = await storage.getDistribution(distributionId);
       if (!distribution) {
         return res.status(404).json({ message: "Distribution not found" });
@@ -68,7 +75,7 @@ export function registerRoutes(app: Express): Server {
 
   app.patch("/api/distributions/:id", hasRole(["admin", "staff"]), async (req, res) => {
     try {
-      const distributionId = parseInt(req.params.id);
+      const distributionId = req.params.id;
       const updatedDistribution = await storage.createDistribution({ ...req.body, id: distributionId });
       if (!updatedDistribution) {
         return res.status(404).json({ message: "Distribution not found" });
@@ -143,7 +150,7 @@ export function registerRoutes(app: Express): Server {
   
   app.patch("/api/users/:id/role", hasRole(["admin"]), async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.params.id;
       const { role } = req.body;
       
       if (!role || !["admin", "staff", "volunteer", "donor", "beneficiary", "guest"].includes(role)) {
@@ -177,7 +184,7 @@ export function registerRoutes(app: Express): Server {
   
   app.get("/api/inventory/:id", async (req, res) => {
     try {
-      const itemId = parseInt(req.params.id);
+      const itemId = req.params.id;
       const item = await storage.getInventoryItem(itemId);
       
       if (!item) {
@@ -192,22 +199,27 @@ export function registerRoutes(app: Express): Server {
   
   app.post("/api/inventory", hasRole(["admin", "staff"]), async (req, res) => {
     try {
-      const itemData = insertInventorySchema.parse(req.body);
-      const item = await storage.addInventoryItem(itemData);
+      const item: InsertInventory = {
+        id: Date.now().toString(),
+        name: req.body.name,
+        quantity: Number(req.body.quantity),
+        unit: req.body.unit,
+        category: req.body.category,
+        locationId: req.body.locationId,
+        expiryDate: req.body.expiryDate ? new Date(req.body.expiryDate) : undefined
+      };
       
-      res.status(201).json({ item });
+      const newItem = await storage.addInventoryItem(item);
+      res.status(201).json({ item: newItem });
       broadcastUpdate('inventory_updated');
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
-      res.status(500).json({ message: "Error creating inventory item" });
+      res.status(500).json({ message: "Error adding inventory item" });
     }
   });
   
   app.patch("/api/inventory/:id", hasRole(["admin", "staff"]), async (req, res) => {
     try {
-      const itemId = parseInt(req.params.id);
+      const itemId = req.params.id;
       const updatedItem = await storage.updateInventoryItem(itemId, req.body);
       
       if (!updatedItem) {
@@ -223,7 +235,7 @@ export function registerRoutes(app: Express): Server {
   
   app.delete("/api/inventory/:id", hasRole(["admin", "staff"]), async (req, res) => {
     try {
-      const itemId = parseInt(req.params.id);
+      const itemId = req.params.id;
       const success = await storage.removeInventoryItem(itemId);
       
       if (!success) {
@@ -240,29 +252,42 @@ export function registerRoutes(app: Express): Server {
   // Aid Request Routes
   app.get("/api/aid-requests", async (req, res) => {
     try {
-      let requests;
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
-      const status = req.query.status as string;
-      
-      if (userId) {
-        requests = await storage.getAidRequestsByUser(userId);
-      } else if (status) {
-        // This would filter by status, but we need to implement it in storage
-        requests = await storage.getAidRequests();
-        requests = requests.filter(req => req.status === status);
-      } else {
-        requests = await storage.getAidRequests();
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No authentication token provided" });
       }
-      
-      res.status(200).json({ requests });
+
+      const token = authHeader.split('Bearer ')[1];
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const userId = decodedToken.uid;
+
+        let requests;
+        const status = req.query.status as string;
+        
+        if (userId) {
+          requests = await storage.getAidRequestsByUser(userId);
+        } else if (status) {
+          requests = await storage.getAidRequests();
+          requests = requests.filter(req => req.status === status);
+        } else {
+          requests = await storage.getAidRequests();
+        }
+        
+        res.status(200).json({ requests });
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        return res.status(401).json({ message: "Invalid authentication token" });
+      }
     } catch (error) {
+      console.error('Error fetching aid requests:', error);
       res.status(500).json({ message: "Error fetching aid requests" });
     }
   });
   
   app.get("/api/aid-requests/:id", async (req, res) => {
     try {
-      const requestId = parseInt(req.params.id);
+      const requestId = req.params.id;
       const request = await storage.getAidRequest(requestId);
       
       if (!request) {
@@ -277,25 +302,34 @@ export function registerRoutes(app: Express): Server {
   
   app.post("/api/aid-requests", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No authentication token provided" });
       }
-      
-      const user = req.user as unknown as { id: string };
-      const requestData = {
-        ...req.body,
-        userId: user.id
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const request: InsertAidRequest = {
+        id: Date.now().toString(),
+        userId,
+        name: req.body.name,
+        location: req.body.location,
+        aidType: req.body.aidType,
+        urgency: req.body.urgency,
+        status: "pending",
+        requestDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
-      // Parse and validate the data
-      const validatedData = insertAidRequestSchema.parse(requestData);
-      const request = await storage.createAidRequest(validatedData);
-      
-      res.status(201).json({ request });
+      const newRequest = await storage.createAidRequest(request);
+      res.status(201).json({ request: newRequest });
       broadcastUpdate('aid_request_updated');
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
+      if (error instanceof Error) {
+        console.error('Error creating aid request:', error.message);
       }
       res.status(500).json({ message: "Error creating aid request" });
     }
@@ -303,7 +337,7 @@ export function registerRoutes(app: Express): Server {
   
   app.patch("/api/aid-requests/:id/status", hasRole(["admin", "staff"]), async (req, res) => {
     try {
-      const requestId = parseInt(req.params.id);
+      const requestId = req.params.id;
       const { status } = req.body;
       
       if (!status || !["pending", "approved", "in_progress", "ready_for_pickup", "in_transit", "delivered", "denied", "cancelled"].includes(status)) {

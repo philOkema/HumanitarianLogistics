@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import cors from 'cors';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -8,7 +9,7 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 // Define valid roles
-const VALID_ROLES = ['admin', 'staff', 'donor', 'beneficiary'] as const;
+const VALID_ROLES = ['admin', 'staff', 'donor', 'beneficiary', 'volunteer'] as const;
 
 // Cloud Function to handle user role updates
 export const updateUserRole = functions.https.onCall(async (data, context) => {
@@ -69,41 +70,54 @@ export const updateUserRole = functions.https.onCall(async (data, context) => {
 });
 
 // Cloud Function to get all users (admin only)
-export const getAllUsers = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'User must be authenticated'
-    );
-  }
+export const getAllUsers = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  return cors({ 
+    origin: [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      process.env.CLIENT_URL || 'https://humanitarianlogistics-d0b77.web.app'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })(req, res, async () => {
+    try {
+      // Get the authorization token from the request header
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'Unauthorized: No token provided' });
+        return;
+      }
 
-  try {
-    // Check if the requesting user is an admin
-    const requesterDoc = await db.collection('users').doc(context.auth.uid).get();
-    const requesterData = requesterDoc.data();
+      const token = authHeader.split('Bearer ')[1];
+      
+      // Verify the token
+      const decodedToken = await auth.verifyIdToken(token);
+      const uid = decodedToken.uid;
 
-    if (!requesterData || requesterData.role !== 'admin') {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'Only admins can view all users'
-      );
+      // Check if the requesting user is an admin
+      const requesterDoc = await db.collection('users').doc(uid).get();
+      const requesterData = requesterDoc.data();
+
+      if (!requesterData || requesterData.role !== 'admin') {
+        res.status(403).json({ error: 'Forbidden: Only admins can view all users' });
+        return;
+      }
+
+      // Get all users from Firestore
+      const usersSnapshot = await db.collection('users').get();
+      const users = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      res.status(200).json({ users });
+    } catch (error) {
+      console.error('Error getting users:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    // Get all users from Firestore
-    const usersSnapshot = await db.collection('users').get();
-    const users = usersSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    return { users };
-  } catch (error) {
-    console.error('Error getting users:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Error getting users'
-    );
-  }
+  });
 });
 
 // Cloud Function to handle user creation

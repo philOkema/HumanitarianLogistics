@@ -24,6 +24,8 @@ export const usersCollection = collection(db, "users");
 export const distributionsCollection = collection(db, "distributions");
 export const inventoriesCollection = collection(db, "inventories");
 export const aidRequestsCollection = collection(db, "aidRequests");
+export const beneficiariesCollection = collection(db, "beneficiaries");
+export const volunteerApplicationsCollection = collection(db, "volunteerApplications");
 
 
 // Export Firestore functions for CRUD operations

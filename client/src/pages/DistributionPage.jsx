@@ -9,7 +9,7 @@ const DistributionPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Aid Distribution</h1>
+          <h1 className="text-2xl text-white font-bold">Aid Distribution</h1>
           <p className="text-sm text-gray-500">Manage and track aid distributions to beneficiaries</p>
         </div>
       </div>

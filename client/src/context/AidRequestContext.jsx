@@ -94,15 +94,19 @@ export function AidRequestProvider({ children }) {
       setLoading(true);
       setError(null);
       
+      // Get the authentication token
+      const token = await user.getIdToken();
+      
       // Fetch aid requests from the API
       const response = await fetch('/api/aid-requests', {
         headers: {
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
@@ -180,7 +184,8 @@ export function AidRequestProvider({ children }) {
       const response = await fetch('/api/aid-requests', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`
         },
         body: JSON.stringify(requestData)
       });
@@ -207,7 +212,7 @@ export function AidRequestProvider({ children }) {
         error: err.message || 'Failed to create aid request. Please try again.'
       };
     }
-  }, []);
+  }, [user]);
 
   // Function to update an aid request
   const updateAidRequest = useCallback(async (requestId, updateData) => {

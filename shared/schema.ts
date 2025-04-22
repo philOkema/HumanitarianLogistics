@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
@@ -13,47 +13,55 @@ export const users = pgTable("users", {
   bio: text("bio"),
   uniqueId: text("unique_id"),
   organization: text("organization"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 export const aidRequests = pgTable("aid_requests", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id),
   name: text("name").notNull(),
   location: text("location").notNull(),
   aidType: text("aid_type").notNull(),
   urgency: text("urgency").notNull(),
   status: text("status").notNull().default("pending"),
   requestDate: timestamp("request_date").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 export const inventory = pgTable("inventory", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   quantity: integer("quantity").notNull(),
   category: text("category").notNull(),
-  locationId: integer("location_id"),
+  locationId: text("location_id"),
   expiryDate: timestamp("expiry_date"),
   unit: text("unit").notNull(),
   lastUpdate: timestamp("last_update").notNull().defaultNow(),
 });
 
 export const distributions = pgTable("distributions", {
-  id: serial("id").primaryKey(),
-  date: date("date").notNull(),
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),
+  quantity: integer("quantity").notNull(),
   location: text("location").notNull(),
   aidType: text("aid_type").notNull(),
-  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 // Beneficiaries
 export const beneficiaries = pgTable("beneficiaries", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   aidHistory: text("aid_history"),
   futureNeeds: text("future_needs"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 export const volunteerApplications = pgTable("volunteer_applications", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull(),
   organization: text("organization"),
@@ -62,9 +70,12 @@ export const volunteerApplications = pgTable("volunteer_applications", {
   bio: text("bio"),
   applicationDate: timestamp("application_date").notNull().defaultNow(),
   status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 export const insertUserSchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   email: z.string().email(),
   password: z.string().min(6),
@@ -77,36 +88,48 @@ export const insertUserSchema = z.object({
 });
 
 export const insertAidRequestSchema = z.object({
-  userId: z.number().optional(),
-  name: z.string(),
-  location: z.string(),
-  aidType: z.string(),
-  urgency: z.string(),
+  id: z.string().optional(),
+  userId: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  location: z.string().min(1, "Location is required"),
+  aidType: z.string().min(1, "Aid type is required"),
+  urgency: z.string().min(1, "Urgency is required"),
+  notes: z.string().optional(),
+  items: z.array(z.object({
+    itemId: z.string(),
+    name: z.string(),
+    quantity: z.number().min(1),
+    unit: z.string()
+  })).optional()
 });
 
 export const insertInventorySchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   quantity: z.number(),
   category: z.string(),
-  locationId: z.number().optional(),
+  locationId: z.string().optional(),
   expiryDate: z.date().optional(),
   unit: z.string(),
 });
 
 export const insertDistributionSchema = z.object({
-  date: z.date(),
+  id: z.string().optional(),
+  date: z.string(),
+  quantity: z.number(),
   location: z.string(),
   aidType: z.string(),
-  quantity: z.number(),
 });
 
 export const insertBeneficiarySchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   aidHistory: z.string().optional(),
   futureNeeds: z.string().optional(),
 });
 
 export const insertVolunteerApplicationSchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   email: z.string().email(),
   organization: z.string().optional(),
@@ -116,19 +139,19 @@ export const insertVolunteerApplicationSchema = z.object({
 });
 
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 
 export type AidRequest = typeof aidRequests.$inferSelect;
-export type InsertAidRequest = z.infer<typeof insertAidRequestSchema>;
+export type InsertAidRequest = typeof aidRequests.$inferInsert;
 
 export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = z.infer<typeof insertInventorySchema>;
 
 export type Distribution = typeof distributions.$inferSelect;
-export type InsertDistribution = z.infer<typeof insertDistributionSchema>;
+export type InsertDistribution = typeof distributions.$inferInsert;
 
 export type Beneficiary = typeof beneficiaries.$inferSelect;
-export type InsertBeneficiary = z.infer<typeof insertBeneficiarySchema>;
+export type InsertBeneficiary = typeof beneficiaries.$inferInsert;
 
 export type VolunteerApplication = typeof volunteerApplications.$inferSelect;
-export type InsertVolunteerApplication = z.infer<typeof insertVolunteerApplicationSchema>;
+export type InsertVolunteerApplication = typeof volunteerApplications.$inferInsert;

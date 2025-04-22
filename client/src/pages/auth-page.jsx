@@ -134,7 +134,7 @@ export default function AuthPage() {
   if (loading) {
     console.log('AuthPage: Loading state');
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -148,14 +148,14 @@ export default function AuthPage() {
   
   console.log('AuthPage: Rendering auth form');
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <ShieldAlert className="h-12 w-12 text-primary" />
+            <ShieldAlert className="h-12 w-12 text-primary text-white" />
           </div>
-          <CardTitle className="text-2xl text-center">Welcome to HumanitarianAid</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl text-center text-white">Welcome to HumanitarianAid</CardTitle>
+          <CardDescription className="text-center text-gray-300">
             {activeTab === "login" 
               ? "Sign in to your account to continue"
               : "Create a new account to get started"}
@@ -163,15 +163,15 @@ export default function AuthPage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-gray-700">
+              <TabsTrigger value="login" className="text-gray-300 data-[state=active]:text-black">Login</TabsTrigger>
+              <TabsTrigger value="register" className="text-gray-300 data-[state=active]:text-black">Register</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-gray-300">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -179,11 +179,12 @@ export default function AuthPage() {
                     value={loginData.email}
                     onChange={handleLoginInputChange('email')}
                     required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-gray-300">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -191,25 +192,26 @@ export default function AuthPage() {
                     value={loginData.password}
                     onChange={handleLoginInputChange('password')}
                     required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 
                 {errors.login && (
-                  <div className="text-sm text-red-500">{errors.login}</div>
+                  <div className="text-sm text-red-400">{errors.login}</div>
                 )}
                 
                 <Button 
                   type="submit" 
-                  className="w-full"
-                  disabled={isSubmitting || loginMutation.isLoading}
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  disabled={isSubmitting}
                 >
-                  {(isSubmitting || loginMutation.isLoading) ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Signing in...
                     </>
                   ) : (
-                    "Sign in"
+                    "Sign In"
                   )}
                 </Button>
               </form>
@@ -218,7 +220,7 @@ export default function AuthPage() {
             <TabsContent value="register">
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username" className="text-gray-300">Username</Label>
                   <Input
                     id="username"
                     type="text"
@@ -226,11 +228,12 @@ export default function AuthPage() {
                     value={registerData.username}
                     onChange={handleRegisterInputChange('username')}
                     required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
+                  <Label htmlFor="register-email" className="text-gray-300">Email</Label>
                   <Input
                     id="register-email"
                     type="email"
@@ -238,19 +241,17 @@ export default function AuthPage() {
                     value={registerData.email}
                     onChange={handleRegisterInputChange('email')}
                     required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    value={registerData.role}
-                    onValueChange={handleRoleChange}
-                  >
-                    <SelectTrigger>
+                  <Label htmlFor="role" className="text-gray-300">Role</Label>
+                  <Select value={registerData.role} onValueChange={handleRoleChange}>
+                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
                       <SelectItem value={USER_ROLES.BENEFICIARY}>Beneficiary</SelectItem>
                       <SelectItem value={USER_ROLES.DONOR}>Donor</SelectItem>
                       <SelectItem value={USER_ROLES.VOLUNTEER}>Volunteer</SelectItem>
@@ -259,19 +260,20 @@ export default function AuthPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-gray-300">Password</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="Create a password"
                     value={registerData.password}
                     onChange={handleRegisterInputChange('password')}
                     required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-gray-300">Confirm Password</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -279,29 +281,29 @@ export default function AuthPage() {
                     value={registerData.confirmPassword}
                     onChange={handleRegisterInputChange('confirmPassword')}
                     required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
+                  {errors.confirmPassword && (
+                    <div className="text-sm text-red-400">{errors.confirmPassword}</div>
+                  )}
                 </div>
                 
-                {errors.confirmPassword && (
-                  <div className="text-sm text-red-500">{errors.confirmPassword}</div>
-                )}
-                
                 {errors.register && (
-                  <div className="text-sm text-red-500">{errors.register}</div>
+                  <div className="text-sm text-red-400">{errors.register}</div>
                 )}
                 
                 <Button 
                   type="submit" 
-                  className="w-full"
-                  disabled={isSubmitting || registerMutation.isLoading}
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  disabled={isSubmitting}
                 >
-                  {(isSubmitting || registerMutation.isLoading) ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creating account...
                     </>
                   ) : (
-                    "Create account"
+                    "Create Account"
                   )}
                 </Button>
               </form>

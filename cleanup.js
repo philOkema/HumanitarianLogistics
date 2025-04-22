@@ -1,10 +1,6 @@
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // Directories to clean
 const dirsToClean = [
@@ -28,49 +24,96 @@ const filesToClean = [
   'Thumbs.db'
 ];
 
-console.log('🧹 Starting cleanup process...');
-
-// Clean npm cache
-try {
-  console.log('Cleaning npm cache...');
-  execSync('npm cache clean --force', { stdio: 'inherit' });
-} catch (error) {
-  console.error('Error cleaning npm cache:', error.message);
-}
-
-// Remove directories
-dirsToClean.forEach(dir => {
-  const dirPath = path.join(__dirname, dir);
-  if (fs.existsSync(dirPath)) {
-    console.log(`Removing directory: ${dir}`);
-    try {
-      fs.rmSync(dirPath, { recursive: true, force: true });
-    } catch (error) {
-      console.error(`Error removing ${dir}:`, error.message);
+// Function to get directory size
+function getDirectorySize(dirPath) {
+  let size = 0;
+  const files = fs.readdirSync(dirPath);
+  
+  for (const file of files) {
+    const filePath = path.join(dirPath, file);
+    const stats = fs.statSync(filePath);
+    
+    if (stats.isDirectory()) {
+      size += getDirectorySize(filePath);
+    } else {
+      size += stats.size;
     }
   }
-});
-
-// Remove files
-filesToClean.forEach(pattern => {
-  console.log(`Cleaning files matching: ${pattern}`);
-  try {
-    execSync(`del /s /q ${pattern}`, { stdio: 'inherit' });
-  } catch (error) {
-    // Ignore errors for files that don't exist
-  }
-});
-
-// Reinstall dependencies with production flag - no fallbacks
-console.log('Reinstalling dependencies...');
-try {
-  // Only try npm ci with production flag
-  console.log('Installing with npm ci --omit=dev...');
-  execSync('npm ci --omit=dev', { stdio: 'inherit' });
-} catch (error) {
-  console.error('Error installing dependencies:', error.message);
-  console.error('Installation failed. You may need to check your network connection or npm configuration.');
-  console.error('You can try running npm install manually after fixing any network issues.');
+  
+  return size;
 }
 
-console.log('✨ Cleanup completed!'); 
+// Function to format bytes to human readable format
+function formatBytes(bytes) {
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  if (bytes === 0) return '0 Byte';
+  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+  return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+}
+
+// Clean up function
+async function cleanup() {
+  console.log('🧹 Starting cleanup process...\n');
+
+  // Remove node_modules from root
+  if (fs.existsSync('node_modules')) {
+    console.log('📦 Removing root node_modules...');
+    fs.rmSync('node_modules', { recursive: true, force: true });
+  }
+
+  // Remove node_modules from client
+  if (fs.existsSync('client/node_modules')) {
+    console.log('📦 Removing client node_modules...');
+    fs.rmSync('client/node_modules', { recursive: true, force: true });
+  }
+
+  // Remove node_modules from server
+  if (fs.existsSync('server/node_modules')) {
+    console.log('📦 Removing server node_modules...');
+    fs.rmSync('server/node_modules', { recursive: true, force: true });
+  }
+
+  // Remove node_modules from functions
+  if (fs.existsSync('functions/node_modules')) {
+    console.log('📦 Removing functions node_modules...');
+    fs.rmSync('functions/node_modules', { recursive: true, force: true });
+  }
+
+  // Remove node_modules from shared
+  if (fs.existsSync('shared/node_modules')) {
+    console.log('📦 Removing shared node_modules...');
+    fs.rmSync('shared/node_modules', { recursive: true, force: true });
+  }
+
+  // Clean npm cache
+  console.log('🧼 Cleaning npm cache...');
+  execSync('npm cache clean --force', { stdio: 'inherit' });
+
+  // Remove package-lock.json files
+  if (fs.existsSync('package-lock.json')) {
+    console.log('🗑️ Removing root package-lock.json...');
+    fs.unlinkSync('package-lock.json');
+  }
+  if (fs.existsSync('client/package-lock.json')) {
+    console.log('🗑️ Removing client package-lock.json...');
+    fs.unlinkSync('client/package-lock.json');
+  }
+  if (fs.existsSync('server/package-lock.json')) {
+    console.log('🗑️ Removing server package-lock.json...');
+    fs.unlinkSync('server/package-lock.json');
+  }
+  if (fs.existsSync('functions/package-lock.json')) {
+    console.log('🗑️ Removing functions package-lock.json...');
+    fs.unlinkSync('functions/package-lock.json');
+  }
+  if (fs.existsSync('shared/package-lock.json')) {
+    console.log('🗑️ Removing shared package-lock.json...');
+    fs.unlinkSync('shared/package-lock.json');
+  }
+
+  console.log('\n✨ Cleanup completed!');
+  console.log('📝 Next steps:');
+  console.log('1. Run "pnpm install" in the root directory');
+}
+
+cleanup().catch(console.error); 

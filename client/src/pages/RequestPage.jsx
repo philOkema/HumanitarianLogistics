@@ -63,7 +63,7 @@ const RequestPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Aid Requests</h1>
+          <h1 className="text-2xl text-white font-bold">Aid Requests</h1>
           <p className="text-sm text-gray-500">
             {requestId ? 'View details of an aid request' : 
              location === '/request/new' ? 'Submit a new aid request' : 
