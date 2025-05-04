@@ -6,6 +6,7 @@ import { Input } from '../ui/input';
 import { useInventory } from '../../context/InventoryContext';
 import { useUser } from '../../context/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { getAllUsersFromFirestore } from '../../services/roleService';
 
 // Define distribution status constants
 export const DISTRIBUTION_STATUS = {
@@ -25,13 +26,14 @@ const DistributionManagement = () => {
     lastUpdate,
     createDistribution,
     updateDistributionStatus,
-    cancelDistribution
+    cancelDistribution,
+    refresh
   } = useDistribution();
   const [editingDistributionId, setEditingDistributionId] = useState(null);
   
   const { aidRequests, getAidRequestById } = useAidRequest();
   const { inventory, getInventoryItem } = useInventory();
-  const { currentUser, canCreateDistribution, canUpdateDistribution } = useUser();
+  const { currentUser, canCreateDistribution, canUpdateDistribution, user } = useUser();
   const { toast } = useToast();
   
   const [filteredDistributions, setFilteredDistributions] = useState([]);
@@ -55,17 +57,26 @@ const DistributionManagement = () => {
   });
   const [errors, setErrors] = useState({});
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [availableAssignees, setAvailableAssignees] = useState([]);
   
   // Load pending requests for distribution creation
   useEffect(() => {
-    // Find approved requests that don't have distributions yet
-    const approvedRequests = aidRequests.filter(request => 
-      request.status === 'approved' && 
+    // Find approved or in_progress requests that don't have distributions yet
+    const eligibleRequests = aidRequests.filter(request => 
+      (request.status === 'approved' || request.status === 'in_progress') && 
       !distributions.some(dist => dist.requestId === request.id)
     );
-    
-    setPendingRequests(approvedRequests);
+    setPendingRequests(eligibleRequests);
   }, [aidRequests, distributions]);
+
+  // Fetch staff and volunteers for the dropdown
+  useEffect(() => {
+    async function fetchAssignees() {
+      const users = await getAllUsersFromFirestore();
+      setAvailableAssignees(users.filter(u => u.role === 'staff' || u.role === 'volunteer'));
+    }
+    fetchAssignees();
+  }, []);
 
   // Filter, search and sort distributions
   useEffect(() => {
@@ -125,28 +136,42 @@ const DistributionManagement = () => {
 
   const handleDistributionDetailsChange = (e) => {
     const { name, value } = e.target;
-    setDistributionDetails((prev) => ({...prev, deliveryDetails: {...prev.deliveryDetails, [name]: value}}));
+    if (name === 'volunteerId') {
+      const selectedUser = availableAssignees.find(u => u.id === value);
+      setDistributionDetails(prev => ({
+        ...prev,
+        deliveryDetails: {
+          ...prev.deliveryDetails,
+          volunteerId: value,
+          assignedTo: selectedUser ? selectedUser.email : ''
+        }
+      }));
+    } else {
+      setDistributionDetails(prev => ({
+        ...prev,
+        deliveryDetails: {
+          ...prev.deliveryDetails,
+          [name]: value
+        }
+      }));
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    console.log(distributionDetails.deliveryDetails);
+    const { deliveryDetails } = distributionDetails;
     if (!selectedRequest) {
       newErrors.request = 'Please select an aid request';
     }
-    
     if (deliveryDetails.method === 'pickup' && !deliveryDetails.pickupLocation.trim()) {
       newErrors.pickupLocation = 'Pickup location is required';
     }
-    const {deliveryDetails} = distributionDetails;
-    if (deliveryDetails.method === 'delivery' && !deliveryDetails.assignedTo.trim() ) {
+    if (deliveryDetails.method === 'delivery' && !deliveryDetails.assignedTo.trim()) {
       newErrors.assignedTo = 'Delivery person is required';
     }
-
     if (deliveryDetails.method === 'delivery' && !deliveryDetails.estimatedDelivery) {
       newErrors.estimatedDelivery = 'Estimated delivery date is required';
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -322,8 +347,32 @@ const DistributionManagement = () => {
         )}
         {deliveryDetails.method === 'delivery' && (
           <>
-            <Input type="text" name="assignedTo" value={deliveryDetails.assignedTo} onChange={handleDistributionDetailsChange} />
-            <Input type="date" name="estimatedDelivery" value={deliveryDetails.estimatedDelivery} onChange={handleDistributionDetailsChange} />
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Assigned To *</label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                name="volunteerId"
+                value={deliveryDetails.volunteerId || ''}
+                onChange={handleDistributionDetailsChange}
+              >
+                <option value="">Select staff or volunteer</option>
+                {availableAssignees.map(user => (
+                  <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                ))}
+              </select>
+              {errors.assignedTo && <p className="text-red-500 text-xs italic">{errors.assignedTo}</p>}
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Estimated Delivery Date *</label>
+              <input
+                type="date"
+                className="w-full border rounded px-3 py-2"
+                name="estimatedDelivery"
+                value={deliveryDetails.estimatedDelivery}
+                onChange={handleDistributionDetailsChange}
+              />
+              {errors.estimatedDelivery && <p className="text-red-500 text-xs italic">{errors.estimatedDelivery}</p>}
+            </div>
           </>
         )}
          <div className="flex justify-end">
@@ -492,197 +541,127 @@ const DistributionManagement = () => {
             </p>
           )}
         </div>
-        
-        {currentUser && canCreateDistribution && (
+        <div className="flex items-center space-x-2">
           <button
-            onClick={() => setIsFormOpen(!isFormOpen)}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            disabled={pendingRequests.length === 0}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            onClick={refresh}
+            title="Refresh"
           >
-            {isFormOpen ? 'Cancel' : '+ Create Distribution'}
+            ⟳ Refresh
           </button>
-        )}
+          {(user?.role === 'admin' || user?.role === 'staff') && (
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              onClick={() => setIsFormOpen(true)}
+            >
+              + New Distribution
+            </button>
+          )}
+        </div>
       </div>
       
-      {/* Create Distribution Form */}
-      {isFormOpen && currentUser && canCreateDistribution && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-6 border">
-          <h3 className="text-lg font-semibold mb-4">Create New Distribution</h3>
-          
-          {pendingRequests.length === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-gray-500">No approved aid requests available for distribution.</p>
+      {/* New Distribution Modal */}
+      {isFormOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setIsFormOpen(false)}
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-semibold mb-4">Create New Distribution</h3>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Aid Request *</label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={selectedRequest ? selectedRequest.id : ''}
+                onChange={e => {
+                  const req = aidRequests.find(r => r.id === e.target.value);
+                  setSelectedRequest(req);
+                }}
+              >
+                <option value="">Select an approved or in_progress request</option>
+                {pendingRequests.map(req => (
+                  <option key={req.id} value={req.id}>
+                    {req.name || req.id} - {req.location}
+                  </option>
+                ))}
+              </select>
+              {errors.request && <p className="text-red-500 text-xs italic">{errors.request}</p>}
             </div>
-          ) : (
-            <div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Delivery Method *</label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                name="method"
+                value={distributionDetails.deliveryDetails.method}
+                onChange={handleDistributionDetailsChange}
+              >
+                <option value="pickup">Pickup</option>
+                <option value="delivery">Delivery</option>
+              </select>
+            </div>
+            {distributionDetails.deliveryDetails.method === 'pickup' && (
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="requestId">
-                  Select Aid Request *
-                </label>
-                <select
-                  id="requestId"
-                  value={selectedRequest ? selectedRequest.id : ''}
-                  onChange={(e) => handleRequestSelect(e.target.value)}
-                  className={`shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
-                    errors.request ? 'border-red-500' : ''
-                  }`}
-                >
-                  <option value="">Select a request</option>
-                  {pendingRequests.map((request) => (
-                    <option key={request.id} value={request.id}>
-                      Request #{request.id} - {request.location} ({request.items.length} items)
-                    </option>
-                  ))}
-                </select>
-                {errors.request && <p className="text-red-500 text-xs italic">{errors.request}</p>}
-              </div>
-              
-              {selectedRequest && (
-                <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
-                  <h4 className="font-semibold text-blue-700 mb-2">Request Details</h4>
-                  <p><span className="font-medium">Location:</span> {selectedRequest.location}</p>
-                  <p><span className="font-medium">Priority:</span> {selectedRequest.priority}</p>
-                  <p><span className="font-medium">Notes:</span> {selectedRequest.notes || 'None'}</p>
-                  
-                  <h5 className="font-semibold text-blue-700 mt-3 mb-2">Requested Items:</h5>
-                  <ul className="list-disc pl-5">
-                    {selectedRequest.items.map((item, index) => {
-                      const inventoryItem = getInventoryItem(item.itemId);
-                      const isAvailable = inventoryItem && inventoryItem.quantity >= item.quantity;
-                      
-                      return (
-                        <li key={index} className={isAvailable ? 'text-green-700' : 'text-red-700'}>
-                          {item.quantity} {item.unit} {item.name}
-                          {!isAvailable && ' (Insufficient stock)'}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-              
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Distribution Method *
-                </label>
-                <div className="flex space-x-4">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="method-pickup"
-                      name="method"
-                      value="pickup"
-                      checked={deliveryDetails.method === 'pickup'}
-                      onChange={handleDistributionDetailsChange}
-                      className="mr-2"
-                    />
-                    <label htmlFor="method-pickup">Pickup</label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="method-delivery"
-                      name="method"
-                      value="delivery"
-                      checked={deliveryDetails.method === 'delivery'}
-                      onChange={handleDistributionDetailsChange}
-                      className="mr-2"
-                    />
-                    <label htmlFor="method-delivery">Delivery</label>
-                  </div>
-                </div>
-              </div>
-              
-              {deliveryDetails.method === 'pickup' ? (
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="pickupLocation">
-                    Pickup Location *
-                  </label>
-                  <input
-                    type="text"
-                    id="pickupLocation"
-                    name="pickupLocation"
-                    value={deliveryDetails.pickupLocation}
-                    onChange={handleDistributionDetailsChange}
-                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
-                      errors.pickupLocation ? 'border-red-500' : ''
-                    }`}
-                    placeholder="Enter pickup location"
-                  />
-                  {errors.pickupLocation && (
-                    <p className="text-red-500 text-xs italic">{errors.pickupLocation}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="assignedTo">
-                      Assigned To *
-                    </label>
-                    <input
-                      type="text"
-                      id="assignedTo"
-                      name="assignedTo"
-                      value={deliveryDetails.assignedTo}
-                      onChange={handleDistributionDetailsChange}
-                      className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
-                        errors.assignedTo ? 'border-red-500' : ''
-                      }`}
-                      placeholder="Enter delivery person name"
-                    />
-                    {errors.assignedTo && (
-                      <p className="text-red-500 text-xs italic">{errors.assignedTo}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="estimatedDelivery">
-                      Estimated Delivery Date *
-                    </label>
-                    <input
-                      type="date"
-                      id="estimatedDelivery"
-                      name="estimatedDelivery"
-                      value={deliveryDetails.estimatedDelivery}
-                      onChange={handleDistributionDetailsChange}
-                      className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
-                        errors.estimatedDelivery ? 'border-red-500' : ''
-                      }`}
-                      min={new Date().toISOString().split('T')[0]} // Set min date to today
-                    />
-                    {errors.estimatedDelivery && (
-                      <p className="text-red-500 text-xs italic">{errors.estimatedDelivery}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="notes">
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={deliveryDetails.notes}
+                <label className="block text-gray-700 text-sm font-bold mb-2">Pickup Location *</label>
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  name="pickupLocation"
+                  value={distributionDetails.deliveryDetails.pickupLocation}
                   onChange={handleDistributionDetailsChange}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  rows="3"
-                  placeholder="Any additional notes about this distribution"
-                ></textarea>
+                />
+                {errors.pickupLocation && <p className="text-red-500 text-xs italic">{errors.pickupLocation}</p>}
               </div>
-              
-              <div className="flex justify-end">
-                <button
-                  onClick={handleCreateDistribution}
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline"
-                  disabled={!selectedRequest}
-                >
-                  Create Distribution
-                </button>
-              </div>
+            )}
+            {distributionDetails.deliveryDetails.method === 'delivery' && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Assigned To *</label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    name="volunteerId"
+                    value={distributionDetails.deliveryDetails.volunteerId || ''}
+                    onChange={handleDistributionDetailsChange}
+                  >
+                    <option value="">Select staff or volunteer</option>
+                    {availableAssignees.map(user => (
+                      <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                    ))}
+                  </select>
+                  {errors.assignedTo && <p className="text-red-500 text-xs italic">{errors.assignedTo}</p>}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Estimated Delivery Date *</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-3 py-2"
+                    name="estimatedDelivery"
+                    value={distributionDetails.deliveryDetails.estimatedDelivery}
+                    onChange={handleDistributionDetailsChange}
+                  />
+                  {errors.estimatedDelivery && <p className="text-red-500 text-xs italic">{errors.estimatedDelivery}</p>}
+                </div>
+              </>
+            )}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Notes</label>
+              <textarea
+                className="w-full border rounded px-3 py-2"
+                name="notes"
+                value={distributionDetails.deliveryDetails.notes}
+                onChange={handleDistributionDetailsChange}
+              />
             </div>
-          )}
+            <div className="flex justify-end">
+              <button
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline"
+                onClick={handleCreateDistribution}
+              >
+                Create Distribution
+              </button>
+            </div>
+          </div>
         </div>
       )}
         {isEditFormOpen && renderEditDistributionForm()}

@@ -27,12 +27,13 @@ interface UserContextType {
   error: Error | null;
   hasRole: (role: UserRole) => boolean;
   hasPermission: (permission: string) => boolean;
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user: authUser, loading: authLoading, error: authError } = useAuth();
+  const { user: authUser, loading: authLoading, error: authError, logout } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -136,8 +137,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     error,
     hasRole,
-    hasPermission
-  }), [user, loading, error, hasRole, hasPermission]);
+    hasPermission,
+    logout
+  }), [user, loading, error, hasRole, hasPermission, logout]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

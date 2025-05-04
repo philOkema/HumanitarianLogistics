@@ -52,7 +52,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen rounded-lg bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900">Welcome, {user.name}!</h1>
@@ -67,13 +67,13 @@ export default function DashboardPage() {
               <CardDescription>Common tasks and operations</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="outline" onClick={() => setLocation('/profile')}>
                 View Profile
               </Button>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="outline" onClick={() => setLocation('/settings')}>
                 Update Settings
               </Button>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="outline" onClick={() => setLocation('/notifications')}>
                 View Notifications
               </Button>
             </CardContent>
@@ -88,41 +88,51 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               {user.role === "admin" && (
                 <>
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/admin-dashboard')}>
                     Manage Users
                   </Button>
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/settings')}>
                     System Settings
                   </Button>
                 </>
               )}
               {user.role === "beneficiary" && (
                 <>
-                  <Button className="w-full" variant="outline">
-                    View Aid Requests
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/request')}>
+                    View My Aid Requests
                   </Button>
-                  <Button className="w-full" variant="outline">
-                    Track Shipments
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/deliveries')}>
+                    Track My Shipments
                   </Button>
                 </>
               )}
               {user.role === "donor" && (
                 <>
-                  <Button className="w-full" variant="outline">
-                    Manage Donations
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/donations')}>
+                    Manage My Donations
                   </Button>
-                  <Button className="w-full" variant="outline">
-                    View Impact
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/analytics')}>
+                    View My Impact
                   </Button>
                 </>
               )}
               {user.role === "volunteer" && (
                 <>
-                  <Button className="w-full" variant="outline">
-                    View Assignments
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/deliveries')}>
+                    View My Assignments
                   </Button>
-                  <Button className="w-full" variant="outline">
-                    Report Hours
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/volunteer-hours')}>
+                    Report My Hours
+                  </Button>
+                </>
+              )}
+              {user.role === "staff" && (
+                <>
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/inventory')}>
+                    Manage Inventory
+                  </Button>
+                  <Button className="w-full" variant="outline" onClick={() => setLocation('/distribution')}>
+                    Oversee Distributions
                   </Button>
                 </>
               )}

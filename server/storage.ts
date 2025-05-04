@@ -77,6 +77,15 @@ export class DatabaseStorage implements IStorage {
   
   async initDb(): Promise<void> {
     // Initialize database tables if needed
+    console.log('Firestore project ID:', process.env.FIREBASE_PROJECT_ID);
+    console.log('Firestore collections initialized:', {
+      users: usersCollection.id,
+      inventories: inventoriesCollection.id,
+      aidRequests: aidRequestsCollection.id,
+      distributions: distributionsCollection.id,
+      beneficiaries: beneficiariesCollection.id,
+      volunteerApplications: volunteerApplicationsCollection.id
+    });
   }
   
   async getUser(id: string): Promise<User | undefined> {
@@ -122,8 +131,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getInventoryItem(id: string): Promise<Inventory | undefined> {
-    const itemDoc = await getDoc(doc(inventoriesCollection, id));
-    return itemDoc.exists() ? itemDoc.data() as Inventory : undefined;
+    try {
+      const itemDoc = await getDoc(doc(inventoriesCollection, id));
+      return itemDoc.exists() ? itemDoc.data() as Inventory : undefined;
+    } catch (error) {
+      console.error('Error getting inventory item:', error);
+      return undefined;
+    }
   }
   
   async addInventoryItem(item: InsertInventory): Promise<Inventory> {
@@ -133,15 +147,27 @@ export class DatabaseStorage implements IStorage {
       id,
       lastUpdate: new Date()
     };
-    await setDoc(doc(inventoriesCollection, id), newItem);
-    return newItem as Inventory;
+    console.log("Writing inventory item to Firestore:", newItem);
+    try {
+      await setDoc(doc(inventoriesCollection, id), newItem);
+      console.log("Successfully wrote inventory item to Firestore:", id);
+      return newItem as Inventory;
+    } catch (error) {
+      console.error("Error writing inventory item:", error);
+      return newItem as Inventory;
+    }
   }
   
   async updateInventoryItem(id: string, item: Partial<InsertInventory>): Promise<Inventory | undefined> {
-    const itemRef = doc(inventoriesCollection, id);
-    await updateDoc(itemRef, { ...item, lastUpdate: new Date() });
-    const updatedDoc = await getDoc(itemRef);
-    return updatedDoc.exists() ? updatedDoc.data() as Inventory : undefined;
+    try {
+      const itemRef = doc(inventoriesCollection, id);
+      await updateDoc(itemRef, { ...item, lastUpdate: new Date() });
+      const updatedDoc = await getDoc(itemRef);
+      return updatedDoc.exists() ? updatedDoc.data() as Inventory : undefined;
+    } catch (error) {
+      console.error('Error updating inventory item:', error);
+      return undefined;
+    }
   }
   
   async removeInventoryItem(id: string): Promise<boolean> {
@@ -149,6 +175,7 @@ export class DatabaseStorage implements IStorage {
       await deleteDoc(doc(inventoriesCollection, id));
       return true;
     } catch (error) {
+      console.error('Error removing inventory item:', error);
       return false;
     }
   }
@@ -171,15 +198,21 @@ export class DatabaseStorage implements IStorage {
   
   async createAidRequest(request: InsertAidRequest): Promise<AidRequest> {
     const id = request.id || Date.now().toString();
-    const newRequest = { 
-      ...request, 
+    const newRequest: any = {
       id,
+      name: request.name,
+      location: request.location,
+      aidType: request.aidType,
+      urgency: request.urgency,
       status: request.status || "pending",
       requestDate: request.requestDate || new Date(),
       createdAt: request.createdAt || new Date(),
-      updatedAt: request.updatedAt || new Date()
+      updatedAt: request.updatedAt || new Date(),
+      userId: request.userId,
+      notes: (request as any).notes || "",
+      priority: (request as any).priority || "low",
+      items: Array.isArray((request as any).items) ? (request as any).items : [],
     };
-    
     try {
       await setDoc(doc(aidRequestsCollection, id), newRequest);
       return newRequest as AidRequest;

@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from './UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
 
 // Create context
 const InventoryContext = createContext();
 
-export function InventoryProvider({ children }) {
+export const InventoryProvider = ({ children }) => {
   const { currentUser } = useUser();
   const { toast } = useToast();
   
@@ -164,13 +165,33 @@ export function InventoryProvider({ children }) {
   // Function to add a new inventory item
   const addInventoryItem = useCallback(async (itemData) => {
     try {
+      // Add history entry
+      const historyEntry = {
+        action: 'create',
+        timestamp: new Date().toISOString(),
+        change: itemData,
+        user: currentUser
+      };
+
+      // Get Firebase ID token
+      let token = null;
+      if (auth.currentUser) {
+        token = await auth.currentUser.getIdToken();
+      }
+
       // Make the API call to create a new inventory item
       const response = await fetch('/api/inventory', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify(itemData)
+        body: JSON.stringify({
+          ...itemData,
+          // Ensure locationId is included if it's not already in itemData
+          locationId: itemData.locationId || itemData.location || '',
+          history: [historyEntry]
+        })
       });
       
       if (!response.ok) {
@@ -195,18 +216,53 @@ export function InventoryProvider({ children }) {
         error: err.message || 'Failed to add inventory item. Please try again.'
       };
     }
-  }, []);
+  }, [currentUser]);
 
   // Function to update an inventory item
   const updateInventoryItem = useCallback(async (itemId, updateData) => {
     try {
+      // Get the current item
+      const currentItem = inventory.find(item => String(item.id) === String(itemId));
+      
+      if (!currentItem) {
+        throw new Error('Item not found');
+      }
+
+      // Create history entry for changes
+      const changes = {};
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] !== currentItem[key]) {
+          changes[key] = {
+            from: currentItem[key],
+            to: updateData[key]
+          };
+        }
+      });
+
+      const historyEntry = {
+        action: 'update',
+        timestamp: new Date().toISOString(),
+        change: changes,
+        user: currentUser
+      };
+
+      // Get Firebase ID token
+      let token = null;
+      if (auth.currentUser) {
+        token = await auth.currentUser.getIdToken();
+      }
+
       // Make the API call to update the inventory item
       const response = await fetch(`/api/inventory/${itemId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify({
+          ...updateData,
+          history: [...(currentItem.history || []), historyEntry]
+        })
       });
       
       if (!response.ok) {
@@ -219,7 +275,7 @@ export function InventoryProvider({ children }) {
       // Update the local state
       setInventory(prevInventory => 
         prevInventory.map(item => 
-          item.id === parseInt(itemId) ? data.item : item
+          String(item.id) === String(itemId) ? data.item : item
         )
       );
       setLastUpdate(new Date());
@@ -235,14 +291,44 @@ export function InventoryProvider({ children }) {
         error: err.message || 'Failed to update inventory item. Please try again.'
       };
     }
-  }, []);
+  }, [inventory, currentUser]);
 
   // Function to remove an inventory item
   const removeInventoryItem = useCallback(async (itemId) => {
     try {
+      console.log('removeInventoryItem called with itemId:', itemId);
+      console.log('Current inventory:', inventory);
+      // Get the current item
+      const currentItem = inventory.find(item => String(item.id) === String(itemId));
+      
+      if (!currentItem) {
+        throw new Error('Item not found');
+      }
+
+      // Create history entry for deletion
+      const historyEntry = {
+        action: 'delete',
+        timestamp: new Date().toISOString(),
+        change: 'Item deleted',
+        user: currentUser
+      };
+
+      // Get Firebase ID token
+      let token = null;
+      if (auth.currentUser) {
+        token = await auth.currentUser.getIdToken();
+      }
+
       // Make the API call to delete the inventory item
       const response = await fetch(`/api/inventory/${itemId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          history: [...(currentItem.history || []), historyEntry]
+        })
       });
       
       if (!response.ok) {
@@ -252,7 +338,7 @@ export function InventoryProvider({ children }) {
       
       // Update the local state
       setInventory(prevInventory => 
-        prevInventory.filter(item => item.id !== parseInt(itemId))
+        prevInventory.filter(item => String(item.id) !== String(itemId))
       );
       setLastUpdate(new Date());
       
@@ -266,52 +352,52 @@ export function InventoryProvider({ children }) {
         error: err.message || 'Failed to remove inventory item. Please try again.'
       };
     }
-  }, []);
+  }, [inventory, currentUser]);
 
   // Function to adjust inventory quantity (for distributions, donations, etc.)
   const adjustQuantity = useCallback(async (itemId, quantityChange, reason) => {
     try {
       // Get the current item
-      const item = await getInventoryItem(itemId);
+      const currentItem = inventory.find(item => item.id === parseInt(itemId));
       
-      if (!item) {
-        return {
-          success: false,
-          error: 'Inventory item not found'
-        };
+      if (!currentItem) {
+        throw new Error('Item not found');
       }
-      
-      const newQuantity = item.quantity + quantityChange;
+
+      const newQuantity = currentItem.quantity + quantityChange;
       
       if (newQuantity < 0) {
-        return {
-          success: false,
-          error: 'Insufficient quantity available'
-        };
+        throw new Error('Insufficient quantity available');
       }
-      
-      // Record the adjustment with timestamp and reason
-      const adjustment = {
+
+      // Create history entry for quantity adjustment
+      const historyEntry = {
+        action: 'adjust',
         timestamp: new Date().toISOString(),
-        previousQuantity: item.quantity,
-        newQuantity,
-        change: quantityChange,
-        reason
+        change: {
+          quantity: {
+            from: currentItem.quantity,
+            to: newQuantity,
+            change: quantityChange
+          },
+          reason
+        },
+        user: currentUser
       };
-      
+
       // Update the item via the API
       return await updateInventoryItem(itemId, {
         quantity: newQuantity,
-        lastAdjustment: adjustment
+        history: [...(currentItem.history || []), historyEntry]
       });
     } catch (err) {
       console.error('Error adjusting inventory quantity:', err);
       return {
         success: false,
-        error: 'Failed to adjust inventory quantity. Please try again.'
+        error: err.message || 'Failed to adjust inventory quantity. Please try again.'
       };
     }
-  }, [getInventoryItem, updateInventoryItem]);
+  }, [inventory, currentUser, updateInventoryItem]);
 
   // Function to get inventory items by category
   const getItemsByCategory = useCallback((category) => {
@@ -372,7 +458,7 @@ export function InventoryProvider({ children }) {
       {children}
     </InventoryContext.Provider>
   );
-}
+};
 
 // Custom hook to use the Inventory context
 export function useInventory() {

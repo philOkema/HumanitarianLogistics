@@ -98,3 +98,9 @@ pnpm start
 2. Make your changes
 3. Submit a pull request
 
+## Need Help?
+
+If you encounter any issues or have questions, please:
+1. Check the existing issues in the repository
+2. Contact your team lead
+3. Create a new issue if needed 

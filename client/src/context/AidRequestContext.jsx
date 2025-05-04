@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from './UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
 
 // Define aid request status constants
 export const REQUEST_STATUS = {
@@ -95,7 +96,10 @@ export function AidRequestProvider({ children }) {
       setError(null);
       
       // Get the authentication token
-      const token = await user.getIdToken();
+      let token = null;
+      if (auth.currentUser) {
+        token = await auth.currentUser.getIdToken();
+      }
       
       // Fetch aid requests from the API
       const response = await fetch('/api/aid-requests', {
@@ -180,12 +184,16 @@ export function AidRequestProvider({ children }) {
   // Function to create a new aid request
   const createAidRequest = useCallback(async (requestData) => {
     try {
+      let token = null;
+      if (auth.currentUser) {
+        token = await auth.currentUser.getIdToken();
+      }
       // Make the API call to create a new request
       const response = await fetch('/api/aid-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestData)
       });
@@ -212,7 +220,7 @@ export function AidRequestProvider({ children }) {
         error: err.message || 'Failed to create aid request. Please try again.'
       };
     }
-  }, [user]);
+  }, []);
 
   // Function to update an aid request
   const updateAidRequest = useCallback(async (requestId, updateData) => {
@@ -242,11 +250,16 @@ export function AidRequestProvider({ children }) {
   // Function specifically for updating the status of a request
   const updateRequestStatus = useCallback(async (requestId, newStatus) => {
     try {
+      let token = null;
+      if (auth.currentUser) {
+        token = await auth.currentUser.getIdToken();
+      }
       // Make the API call to update the request status
       const response = await fetch(`/api/aid-requests/${requestId}/status`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status: newStatus })
       });
@@ -261,7 +274,7 @@ export function AidRequestProvider({ children }) {
       // Update the local state
       setAidRequests(prevRequests => 
         prevRequests.map(request => 
-          request.id === parseInt(requestId) ? data.request : request
+          request.id === requestId ? data.request : request
         )
       );
       setLastUpdate(new Date());

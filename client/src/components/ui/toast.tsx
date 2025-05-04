@@ -23,13 +23,13 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-4 pr-6 text-sm shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[100%] data-[swipe=move]:translate-x-0 data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=open]:fade-in-90 data-[state=closed]:animate-out data-[state=closed]:fade-out-80",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default: "bg-background border bg-white/95 dark:bg-gray-900/95",
         destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+          "group destructive bg-destructive text-destructive-foreground border-destructive/50 dark:bg-destructive dark:text-destructive-foreground dark:border-destructive bg-opacity-95 dark:bg-opacity-95",
       },
     },
     defaultVariants: {
@@ -92,7 +92,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold", className)}
+    className={cn("text-sm font-semibold text-gray-100", className)}
     {...props}
   />
 ))
@@ -104,7 +104,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm opacity-90", className)}
+    className={cn("text-sm opacity-90 text-gray-200", className)}
     {...props}
   />
 ))

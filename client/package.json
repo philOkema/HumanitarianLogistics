@@ -11,7 +11,10 @@
     "clean": "rimraf .turbo node_modules dist"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@humanitarian-aid/shared": "workspace:*",
+    "@mui/material": "^7.0.2",
     "@radix-ui/react-accordion": "^1.2.7",
     "@radix-ui/react-alert-dialog": "^1.1.10",
     "@radix-ui/react-aspect-ratio": "^1.1.4",
@@ -46,6 +49,7 @@
     "cmdk": "^1.1.1",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.7.4",
+    "html5-qrcode": "^2.3.8",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.501.0",
     "react": "^18.3.1",

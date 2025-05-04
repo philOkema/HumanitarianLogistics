@@ -21,6 +21,8 @@ console.log('Environment loaded:', {
   FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? 'Set' : 'Not Set',
   NODE_ENV: process.env.NODE_ENV
 });
+console.log('FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID);
+console.log('FIREBASE_CLIENT_EMAIL:', process.env.FIREBASE_CLIENT_EMAIL);
 
 // Validate required environment variables
 const requiredEnvVars = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
@@ -34,16 +36,11 @@ if (missingVars.length > 0) {
 // Initialize Firebase Admin
 let app;
 try {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  if (!privateKey) {
-    throw new Error('Private key is undefined after processing');
-  }
-
   app = getApps().length === 0 ? initializeApp({
     credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
     })
   }) : getApps()[0];
 
@@ -124,6 +121,29 @@ export const getUserRole = async (userId: string): Promise<UserRole | null> => {
   } catch (error) {
     console.error('Error getting user role:', error);
     return null;
+  }
+};
+
+// Middleware to authenticate using Firebase ID token from Authorization header
+export const authenticateFirebaseToken = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'No authentication token provided' });
+  }
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+    req.user = {
+      id: decodedToken.uid,
+      email: decodedToken.email || '',
+      name: decodedToken.name || '',
+      role: decodedToken.role // custom claim
+    };
+    req.isAuthenticated = (() => true) as any;
+    next();
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return res.status(401).json({ message: 'Invalid authentication token' });
   }
 };
 

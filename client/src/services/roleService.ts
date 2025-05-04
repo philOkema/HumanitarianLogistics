@@ -1,4 +1,6 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 const functions = getFunctions();
 
@@ -38,4 +40,18 @@ export const getAllUsers = async (): Promise<UsersResponse> => {
     console.error('Error getting users:', error);
     throw error;
   }
-}; 
+};
+
+export async function getAllUsersFromFirestore() {
+  const usersCol = collection(db, "users");
+  const userSnapshot = await getDocs(usersCol);
+  return userSnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      email: data.email || '',
+      name: data.name || '',
+      role: data.role || '',
+    };
+  });
+} 

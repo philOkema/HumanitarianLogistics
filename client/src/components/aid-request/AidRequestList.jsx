@@ -4,6 +4,16 @@ import { useUser } from '../../context/UserContext';
 import { Link } from 'wouter';
 import { Loader2 } from 'lucide-react';
 
+// Utility to convert Firestore timestamp to JS Date
+function toDate(ts) {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts;
+  if (typeof ts === 'object' && ts.seconds) {
+    return new Date(ts.seconds * 1000);
+  }
+  return new Date(ts);
+}
+
 const AidRequestList = () => {
   const { aidRequests = [], loading, error, updateRequestStatus } = useAidRequest();
   const { user } = useUser();
@@ -275,10 +285,10 @@ const AidRequestList = () => {
                   {isAdmin && (
                     <td className="py-3 px-4">{request.beneficiaryId}</td>
                   )}
-                  <td className="py-3 px-4">{new Date(request.createdAt).toLocaleDateString()}</td>
+                  <td className="py-3 px-4">{toDate(request.createdAt)?.toLocaleDateString() || ''}</td>
                   <td className="py-3 px-4">
                     <div className="flex flex-col space-y-1">
-                      {request.items.map((item, idx) => (
+                      {(request.items || []).map((item, idx) => (
                         <div key={idx} className="text-sm">
                           {item.quantity} {item.unit} {item.name}
                         </div>

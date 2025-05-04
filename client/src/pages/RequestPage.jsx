@@ -29,7 +29,7 @@ const RequestPage = () => {
 
   const renderContent = () => {
     if (location === '/request/new') {
-      return hasPermission('create_aid_request') ? (
+      return hasPermission("create_aid_request") ? (
         <AidRequestForm 
           onRequestSubmitted={() => {
             setLocation('/request');

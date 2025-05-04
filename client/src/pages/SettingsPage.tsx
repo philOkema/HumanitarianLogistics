@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { useRoleFeatures } from '../hooks/useRoleFeatures';
-import { updateUserRole, getAllUsers } from '../services/roleService';
+import { updateUserRole, getAllUsersFromFirestore } from '../services/roleService';
 
 interface User {
   id: string;
@@ -20,8 +20,8 @@ const SettingsPage: React.FC = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await getAllUsers();
-        setUsers(response.users);
+        const users = await getAllUsersFromFirestore();
+        setUsers(users);
       } catch (err) {
         setError('Failed to fetch users');
         console.error(err);

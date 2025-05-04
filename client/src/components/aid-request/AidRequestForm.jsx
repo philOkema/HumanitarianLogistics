@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAidRequest } from '../../context/AidRequestContext';
 import { useInventory } from '../../context/InventoryContext';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '../../context/UserContext';
 
 const AidRequestForm = ({ onRequestSubmitted, request = null }) => {
   const { createAidRequest, updateAidRequest } = useAidRequest();
   const { inventory, aidItems } = useInventory();
   const { toast } = useToast();
+  const { user } = useUser();
 
   const initialFormData = useMemo(() => {
     if (request) {
@@ -105,11 +107,11 @@ const AidRequestForm = ({ onRequestSubmitted, request = null }) => {
     const updatedItems = [...formData.items];
 
     if (field === 'itemId') {
-      const selectedItem = availableItems.find(item => item.id === parseInt(value));
+      const selectedItem = availableItems.find(item => String(item.id) === String(value));
       if (selectedItem) {
         updatedItems[index] = {
           ...updatedItems[index],
-          itemId: parseInt(value),
+          itemId: selectedItem.id,
           name: selectedItem.name,
           unit: selectedItem.unit || 'unit'
         };
@@ -171,6 +173,12 @@ const AidRequestForm = ({ onRequestSubmitted, request = null }) => {
       aidType: formData.aidType,
       urgency: formData.urgency,
       notes: notesWithItems,
+      status: 'pending',
+      requestDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      items: formattedItems,
+      userId: user?.uid
     };
   
     let result;

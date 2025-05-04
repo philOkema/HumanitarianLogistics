@@ -17,9 +17,11 @@ const MainLayout = ({ children }) => {
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
-            <div className="max-w-7xl mx-auto">
-              {children}
+          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6">
+            <div className="max-w-7xl mx-auto w-full">
+              <div className="px-2 sm:px-4 md:px-6">
+                {children}
+              </div>
             </div>
           </main>
         </div>

@@ -2,6 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useAidRequest, REQUEST_STATUS } from '../../context/AidRequestContext';
 import { useToast } from '@/hooks/use-toast';
 
+// Utility to convert Firestore timestamp to JS Date
+function toDate(ts) {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts;
+  if (typeof ts === 'object' && ts.seconds) {
+    return new Date(ts.seconds * 1000);
+  }
+  return new Date(ts);
+}
+
 const AidRequestTracker = ({ requestId }) => {
   const { getAidRequestById, updateAidRequest } = useAidRequest();
   const { toast } = useToast();
@@ -18,9 +28,9 @@ const AidRequestTracker = ({ requestId }) => {
       return;
     }
 
-    const loadRequest = () => {
+    const loadRequest = async () => {
       try {
-        const requestData = getAidRequestById(requestId);
+        const requestData = await getAidRequestById(requestId);
         
         if (!requestData) {
           setError('Request not found');
@@ -192,7 +202,7 @@ const AidRequestTracker = ({ requestId }) => {
           <h2 className="text-2xl font-semibold">Request #{request.id}</h2>
           <div className={`px-4 py-2 rounded-full border ${getStatusColor(request.status)}`}>
             <span className="mr-2">{getStatusIcon(request.status)}</span>
-            <span className="font-medium capitalize">{request.status.replace('_', ' ')}</span>
+            <span className="font-medium capitalize">{request.status ? request.status.replace('_', ' ') : ''}</span>
           </div>
         </div>
         
@@ -201,10 +211,10 @@ const AidRequestTracker = ({ requestId }) => {
         </p>
         
         <div className="mt-4 text-sm text-gray-500">
-          Created: {new Date(request.createdAt).toLocaleString()}
+          Created: {toDate(request.createdAt)?.toLocaleString() || ''}
           {request.updatedAt !== request.createdAt && (
             <span className="ml-3">
-              Last Updated: {new Date(request.updatedAt).toLocaleString()}
+              Last Updated: {toDate(request.updatedAt)?.toLocaleString() || ''}
             </span>
           )}
         </div>
@@ -219,7 +229,7 @@ const AidRequestTracker = ({ requestId }) => {
             <div>Unit</div>
           </div>
           
-          {request.items.map((item, index) => (
+          {(request.items || []).map((item, index) => (
             <div key={index} className="grid grid-cols-3 py-2 border-b border-gray-200 text-gray-700">
               <div>{item.name}</div>
               <div>{item.quantity}</div>
@@ -266,7 +276,7 @@ const AidRequestTracker = ({ requestId }) => {
                 </div>
                 <div className="ml-12">
                   <h4 className={`text-md font-semibold capitalize ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
-                    {status.replace('_', ' ')}
+                    {status ? status.replace('_', ' ') : ''}
                   </h4>
                   <p className={`text-sm ${isActive ? 'text-gray-600' : 'text-gray-400'}`}>
                     {getStatusMessage(status)}
