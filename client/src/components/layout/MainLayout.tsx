@@ -43,7 +43,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const navigationItems = [
     { path: '/home', label: 'Home', icon: <Home className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.DONOR, USER_ROLES.BENEFICIARY, USER_ROLES.VOLUNTEER, USER_ROLES.GUEST] },
-    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.BENEFICIARY] },
+    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.BENEFICIARY, USER_ROLES.DONOR] },
     { path: '/inventory', label: 'Inventory', icon: <Package className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.VOLUNTEER] },
     { path: '/donations', label: 'Donations', icon: <Gift className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.DONOR] },
     { path: '/distribution', label: 'Distribution', icon: <Truck className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.VOLUNTEER] },
@@ -58,6 +58,11 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const visibleItems = navigationItems.filter(item => 
     item.roles.includes(user.role)
   );
+
+  // Debug logs for sidebar role issues
+  console.log('Sidebar user.role:', user.role);
+  console.log('Sidebar expected admin:', USER_ROLES.ADMIN);
+  console.log('Sidebar donations roles:', navigationItems.find(i => i.path === '/donations')?.roles);
 
   const handleLogout = () => {
     logout();

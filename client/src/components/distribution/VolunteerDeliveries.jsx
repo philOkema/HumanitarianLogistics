@@ -146,7 +146,13 @@ const VolunteerDeliveries = () => {
     }
   };
 
+  const normalizeStatus = (status) => {
+    if (status === 'pending') return 'assigned';
+    return status;
+  };
+
   const getStatusColor = (status) => {
+    status = normalizeStatus(status);
     switch (status) {
       case 'assigned': return 'info';
       case 'picked-up': return 'primary';
@@ -157,6 +163,7 @@ const VolunteerDeliveries = () => {
   };
 
   const getNextAction = (status) => {
+    status = normalizeStatus(status);
     switch (status) {
       case 'assigned': return 'Mark as Picked Up';
       case 'picked-up': return 'Start Delivery';
@@ -166,6 +173,7 @@ const VolunteerDeliveries = () => {
   };
 
   const getNextStatus = (status) => {
+    status = normalizeStatus(status);
     switch (status) {
       case 'assigned': return 'picked-up';
       case 'picked-up': return 'in-transit';

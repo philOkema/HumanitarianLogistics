@@ -62,8 +62,6 @@ const AidRequestTracker = ({ requestId }) => {
         return 'bg-blue-100 border-blue-500 text-blue-700';
       case REQUEST_STATUS.IN_PROGRESS:
         return 'bg-purple-100 border-purple-500 text-purple-700';
-      case REQUEST_STATUS.READY_FOR_PICKUP:
-        return 'bg-teal-100 border-teal-500 text-teal-700';
       case REQUEST_STATUS.IN_TRANSIT:
         return 'bg-indigo-100 border-indigo-500 text-indigo-700';
       case REQUEST_STATUS.DELIVERED:
@@ -85,8 +83,7 @@ const AidRequestTracker = ({ requestId }) => {
         return '✅';
       case REQUEST_STATUS.IN_PROGRESS:
         return '🔄';
-      case REQUEST_STATUS.READY_FOR_PICKUP:
-        return '📦';
+      
       case REQUEST_STATUS.IN_TRANSIT:
         return '🚚';
       case REQUEST_STATUS.DELIVERED:
@@ -108,12 +105,10 @@ const AidRequestTracker = ({ requestId }) => {
         return 'Your request has been approved! We are preparing your items.';
       case REQUEST_STATUS.IN_PROGRESS:
         return 'Your request is being processed and items are being prepared.';
-      case REQUEST_STATUS.READY_FOR_PICKUP:
-        return 'Your items are ready for pickup at the designated location.';
       case REQUEST_STATUS.IN_TRANSIT:
         return 'Your items are on the way to your location.';
       case REQUEST_STATUS.DELIVERED:
-        return 'Your items have been delivered. Thank you for using our service!';
+        return 'Your aid has been delivered.';
       case REQUEST_STATUS.DENIED:
         return 'We regret to inform you that your request could not be fulfilled at this time.';
       case REQUEST_STATUS.CANCELLED:
@@ -195,19 +190,23 @@ const AidRequestTracker = ({ requestId }) => {
     );
   }
 
+  // Normalize status: treat 'fulfilled' as 'delivered'
+  let normalizedStatus = request.status;
+  if (normalizedStatus === 'fulfilled') normalizedStatus = 'delivered';
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="border-b pb-4 mb-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold">Request #{request.id}</h2>
-          <div className={`px-4 py-2 rounded-full border ${getStatusColor(request.status)}`}>
-            <span className="mr-2">{getStatusIcon(request.status)}</span>
-            <span className="font-medium capitalize">{request.status ? request.status.replace('_', ' ') : ''}</span>
+          <div className={`px-4 py-2 rounded-full border ${getStatusColor(normalizedStatus)}`}>
+            <span className="mr-2">{getStatusIcon(normalizedStatus)}</span>
+            <span className="font-medium capitalize">{normalizedStatus ? normalizedStatus.replace('_', ' ') : ''}</span>
           </div>
         </div>
         
         <p className="text-gray-600 mt-2">
-          {getStatusMessage(request.status)}
+          {getStatusMessage(normalizedStatus)}
         </p>
         
         <div className="mt-4 text-sm text-gray-500">
@@ -265,8 +264,8 @@ const AidRequestTracker = ({ requestId }) => {
           <div className="absolute left-4 top-0 h-full w-0.5 bg-gray-200"></div>
           
           {Object.values(REQUEST_STATUS).map((status, index) => {
-            const isActive = Object.values(REQUEST_STATUS).indexOf(request.status) >= index;
-            const isPassed = Object.values(REQUEST_STATUS).indexOf(request.status) > index;
+            const isActive = Object.values(REQUEST_STATUS).indexOf(normalizedStatus) >= index;
+            const isPassed = Object.values(REQUEST_STATUS).indexOf(normalizedStatus) > index;
             
             return (
               <div key={status} className={`relative flex items-start mb-6 ${isActive ? '' : 'opacity-40'}`}>

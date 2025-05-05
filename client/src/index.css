@@ -21,3 +21,23 @@
     border: 1px solid hsl(var(--border));
   }
 }
+
+/* Prettier global scrollbars for dark theme */
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #232b38;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4250;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #232b38 transparent;
+}

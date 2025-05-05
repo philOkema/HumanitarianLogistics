@@ -94,17 +94,17 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen rounded-lg bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Welcome Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-6">
-            <Heart className="h-12 w-12 text-primary" />
+            <Heart className="h-12 w-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-white mb-4">
             Welcome to HumanitarianAid
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-white/80 max-w-2xl mx-auto">
             {user ? `Welcome back, ${user.displayName || 'User'}!` : 'Connecting those who need help with those who can help'}
           </p>
         </div>
@@ -113,19 +113,19 @@ const HomePage: React.FC = () => {
           <>
             {/* Quick Actions Grid */}
             <div className="mb-12">
-              <h2 className="text-2xl font-semibold mb-6">Quick Actions</h2>
+              <h2 className="text-2xl font-semibold mb-6 text-white">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {getQuickActions().map((action, index) => (
                   <Link key={index} href={action.path}>
-                    <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-white/10 border-0">
                       <CardHeader>
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-primary/10 rounded-lg">
+                          <div className="p-2 bg-white/20 rounded-lg">
                             {action.icon}
                           </div>
                           <div>
-                            <CardTitle>{action.title}</CardTitle>
-                            <CardDescription>{action.description}</CardDescription>
+                            <CardTitle className="text-white">{action.title}</CardTitle>
+                            <CardDescription className="text-white/60">{action.description}</CardDescription>
                           </div>
                         </div>
                       </CardHeader>
@@ -137,20 +137,20 @@ const HomePage: React.FC = () => {
 
             {/* Statistics Grid */}
             <div>
-              <h2 className="text-2xl font-semibold mb-6">Overview</h2>
+              <h2 className="text-2xl font-semibold mb-6 text-white">Overview</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {getStatistics().map((stat, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="bg-white/10 border-0">
                     <CardHeader>
-                      <CardTitle className="text-3xl font-bold text-primary">
+                      <CardTitle className="text-3xl font-bold text-white">
                         {stat.value}
                       </CardTitle>
-                      <CardDescription className="text-lg font-medium">
+                      <CardDescription className="text-lg font-medium text-white/60">
                         {stat.label}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-500">{stat.description}</p>
+                      <p className="text-sm text-white/60">{stat.description}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -159,15 +159,15 @@ const HomePage: React.FC = () => {
           </>
         ) : (
           <div className="flex flex-col items-center space-y-6">
-            <p className="text-lg text-gray-600 max-w-2xl text-center">
+            <p className="text-lg text-white/80 max-w-2xl text-center">
               Join our platform to make a difference in your community.
             </p>
             <div className="flex gap-4">
               <Link href="/auth?type=login">
-                <Button size="lg">Sign In</Button>
+                <Button size="lg" className="bg-primary text-white hover:bg-primary/80">Sign In</Button>
               </Link>
               <Link href="/auth?type=register">
-                <Button size="lg" variant="outline">Register</Button>
+                <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/10">Register</Button>
               </Link>
             </div>
           </div>

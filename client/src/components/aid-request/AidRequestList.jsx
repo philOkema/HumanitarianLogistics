@@ -92,8 +92,7 @@ const AidRequestList = () => {
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case REQUEST_STATUS.IN_PROGRESS:
         return 'bg-indigo-100 text-indigo-800 border-indigo-300';
-      case REQUEST_STATUS.READY_FOR_PICKUP:
-        return 'bg-purple-100 text-purple-800 border-purple-300';
+      
       case REQUEST_STATUS.IN_TRANSIT:
         return 'bg-sky-100 text-sky-800 border-sky-300';
       case REQUEST_STATUS.DELIVERED:

@@ -81,14 +81,14 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-6">PROFILE</h2>
+    <div className="bg-white/10 rounded-lg shadow-md p-6">
+      <h2 className="text-xl font-semibold mb-6 text-white">PROFILE</h2>
       
       <div className="max-w-xl mx-auto">
         {isEditing ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="text-center mb-6">
-              <div className="h-24 w-24 bg-secondary rounded-full flex items-center justify-center text-white text-3xl mb-4 mx-auto">
+              <div className="h-24 w-24 bg-primary/40 rounded-full flex items-center justify-center text-white text-3xl mb-4 mx-auto">
                 {user.photoURL ? (
                   <img src={user.photoURL} alt={user.displayName} className="h-24 w-24 rounded-full object-cover" />
                 ) : (
@@ -97,17 +97,17 @@ const ProfilePage = () => {
                   </svg>
                 )}
               </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-4 capitalize">{user.role}</h3>
-              <p className="text-gray-600 mb-2">User ID: {user.uid}</p>
+              <h3 className="text-xl font-medium text-white mb-4 capitalize">{user.role}</h3>
+              <p className="text-white/60 mb-2">User ID: {user.uid}</p>
             </div>
             
             <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label htmlFor="displayName" className="block text-sm font-medium text-white mb-1">Name</label>
               <input 
                 type="text" 
                 id="displayName" 
                 name="displayName"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                className="w-full px-3 py-2 bg-white/10 text-white border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
                 value={formData.displayName}
                 onChange={handleChange}
                 required
@@ -115,12 +115,12 @@ const ProfilePage = () => {
             </div>
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-1">Email</label>
               <input 
                 type="email" 
                 id="email" 
                 name="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                className="w-full px-3 py-2 bg-white/10 text-white border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -129,30 +129,30 @@ const ProfilePage = () => {
             </div>
             
             <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-white mb-1">Phone</label>
               <input 
                 type="tel" 
                 id="phoneNumber" 
                 name="phoneNumber"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                className="w-full px-3 py-2 bg-white/10 text-white border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
                 value={formData.phoneNumber}
                 onChange={handleChange}
               />
             </div>
             
             <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <label htmlFor="country" className="block text-sm font-medium text-white mb-1">Country</label>
               <select 
                 id="country" 
                 name="country"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-3 py-2 bg-white/10 text-white border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 value={formData.country}
                 onChange={handleChange}
                 required
               >
                 <option value="" disabled>Select country</option>
                 {countries.map((country) => (
-                  <option key={country.value} value={country.value}>
+                  <option key={country.value} value={country.value} className="text-black">
                     {country.label}
                   </option>
                 ))}
@@ -160,12 +160,12 @@ const ProfilePage = () => {
             </div>
             
             <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+              <label htmlFor="bio" className="block text-sm font-medium text-white mb-1">Bio</label>
               <textarea 
                 id="bio" 
                 name="bio"
                 rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                className="w-full px-3 py-2 bg-white/10 text-white border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
                 value={formData.bio}
                 onChange={handleChange}
               />
@@ -174,7 +174,7 @@ const ProfilePage = () => {
             <div className="flex justify-end space-x-3">
               <button 
                 type="button" 
-                className="py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="py-2 px-4 border border-white/20 text-white rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
@@ -190,7 +190,7 @@ const ProfilePage = () => {
         ) : (
           <>
             <div className="flex flex-col items-center mb-6">
-              <div className="h-24 w-24 bg-secondary rounded-full flex items-center justify-center text-white text-3xl mb-4">
+              <div className="h-24 w-24 bg-primary/40 rounded-full flex items-center justify-center text-white text-3xl mb-4">
                 {user.photoURL ? (
                   <img src={user.photoURL} alt={user.displayName} className="h-24 w-24 rounded-full object-cover" />
                 ) : (
@@ -199,19 +199,19 @@ const ProfilePage = () => {
                   </svg>
                 )}
               </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-1">{user.displayName || 'No name set'}</h3>
-              <p className="text-gray-600 mb-1 capitalize">{user.role}</p>
-              <p className="text-gray-600 mb-1">{user.email}</p>
-              {user.phoneNumber && <p className="text-gray-600 mb-1">{user.phoneNumber}</p>}
-              {user.country && <p className="text-gray-600 mb-1">{user.country}</p>}
-              <p className="text-gray-500 text-sm">ID: {user.uid}</p>
+              <h3 className="text-xl font-medium text-white mb-1">{user.displayName || 'No name set'}</h3>
+              <p className="text-white/60 mb-1 capitalize">{user.role}</p>
+              <p className="text-white/60 mb-1">{user.email}</p>
+              {user.phoneNumber && <p className="text-white/60 mb-1">{user.phoneNumber}</p>}
+              {user.country && <p className="text-white/60 mb-1">{user.country}</p>}
+              <p className="text-white/40 text-sm">ID: {user.uid}</p>
             </div>
             
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">BIO</h4>
-              <div className="bg-gray-50 rounded-lg p-4 min-h-[100px]">
-                {user.bio ? user.bio : 
-                  <p className="text-gray-400 italic">No bio information provided</p>
+              <h4 className="text-sm font-medium text-white/60 mb-2">BIO</h4>
+              <div className="bg-white/10 rounded-lg p-4 min-h-[100px]">
+                {user.bio ? <span className="text-white/80">{user.bio}</span> : 
+                  <p className="text-white/40 italic">No bio information provided</p>
                 }
               </div>
             </div>
@@ -219,7 +219,7 @@ const ProfilePage = () => {
             <div className="flex justify-between">
               <button 
                 onClick={handleLogout}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                className="bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 Logout
               </button>

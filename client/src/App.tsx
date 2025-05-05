@@ -67,7 +67,7 @@ const App = () => {
                       </Route>
                       
                       <Route path="/dashboard">
-                        <RoleBasedRoute component={DashboardPage} requiredRoles={['admin', 'staff', 'volunteer', 'beneficiary']} />
+                        <RoleBasedRoute component={DashboardPage} requiredRoles={['admin', 'staff', 'volunteer', 'beneficiary', 'donor']} />
                       </Route>
                       
                       <Route path="/admin-dashboard">

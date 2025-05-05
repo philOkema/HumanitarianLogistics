@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../hooks/use-auth';
+import { updateProfile as firebaseUpdateProfile } from 'firebase/auth';
 
 export type UserRole = 'admin' | 'staff' | 'donor' | 'beneficiary' | 'volunteer' | 'guest';
 export const USER_ROLES = {
@@ -28,6 +29,7 @@ interface UserContextType {
   hasRole: (role: UserRole) => boolean;
   hasPermission: (permission: string) => boolean;
   logout: () => void;
+  updateProfile: (profileData: Partial<User>) => Promise<{ success: boolean; message: string }>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -132,13 +134,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
+  // Add updateProfile function
+  const updateProfile = async (profileData: Partial<User>) => {
+    if (!user) return { success: false, message: 'No user logged in' };
+    try {
+      // Update Firestore user document
+      await updateDoc(doc(db, 'users', user.uid), profileData);
+      // Optionally update Firebase Auth profile (displayName, photoURL)
+      if (profileData.displayName || profileData.photoURL) {
+        await firebaseUpdateProfile(user, {
+          displayName: profileData.displayName,
+          photoURL: profileData.photoURL
+        });
+      }
+      // Refresh user data
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setUser({
+          ...user,
+          ...userData
+        });
+      }
+      return { success: true, message: 'Profile updated successfully' };
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      return { success: false, message: error.message || 'Failed to update profile' };
+    }
+  };
+
   const value = useMemo(() => ({
     user,
     loading,
     error,
     hasRole,
     hasPermission,
-    logout
+    logout,
+    updateProfile
   }), [user, loading, error, hasRole, hasPermission, logout]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
