@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import LocationTrackingControls from '../components/LocationTrackingControls';
 import MapboxTracker from '../components/MapboxTracker';
 import { useUser } from '../context/UserContext';
+import { useLocationTracking } from '../hooks/useLocationTracking';
 
 const StaffLocationTracking: React.FC = () => {
   const { user } = useUser();
+  const { startTracking } = useLocationTracking();
+
+  useEffect(() => {
+    if (user) {
+      startTracking();
+    }
+  }, [user, startTracking]);
 
   if (!user) {
     return (
