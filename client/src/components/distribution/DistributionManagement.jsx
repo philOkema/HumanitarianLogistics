@@ -12,7 +12,6 @@ import { getAllUsersFromFirestore } from '../../services/roleService';
 export const DISTRIBUTION_STATUS = {
   PENDING: 'pending',
   PREPARING: 'preparing',
-  READY_FOR_PICKUP: 'ready_for_pickup',
   IN_TRANSIT: 'in_transit',
   DELIVERED: 'delivered',
   CANCELLED: 'cancelled'
@@ -393,8 +392,6 @@ const DistributionManagement = () => {
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case DISTRIBUTION_STATUS.PREPARING:
         return 'bg-blue-100 text-blue-800 border-blue-300';
-      case DISTRIBUTION_STATUS.READY_FOR_PICKUP:
-        return 'bg-purple-100 text-purple-800 border-purple-300';
       case DISTRIBUTION_STATUS.IN_TRANSIT:
         return 'bg-indigo-100 text-indigo-800 border-indigo-300';
       case DISTRIBUTION_STATUS.DELIVERED:
@@ -411,8 +408,6 @@ const DistributionManagement = () => {
       case DISTRIBUTION_STATUS.PENDING:
         return DISTRIBUTION_STATUS.PREPARING;
       case DISTRIBUTION_STATUS.PREPARING:
-        return DISTRIBUTION_STATUS.READY_FOR_PICKUP;
-      case DISTRIBUTION_STATUS.READY_FOR_PICKUP:
         return DISTRIBUTION_STATUS.IN_TRANSIT;
       case DISTRIBUTION_STATUS.IN_TRANSIT:
         return DISTRIBUTION_STATUS.DELIVERED;
@@ -470,7 +465,8 @@ const DistributionManagement = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {distribution.items.map((item, index) => {
-                  const inventoryItem = getInventoryItem(item.itemId);
+                  // Use local inventory array for lookup
+                  const inventoryItem = inventory.find(inv => inv.id === item.itemId || inv.id === parseInt(item.itemId));
                   const isAvailable = inventoryItem && inventoryItem.quantity >= item.quantity;
                   
                   return (

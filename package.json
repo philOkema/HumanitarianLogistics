@@ -13,6 +13,7 @@
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",
+    "start:all": "concurrently \"cd client && pnpm dev\" \"cd functions && pnpm serve\"",
     "clean": "turbo run clean && rm -rf node_modules",
     "cleanup": "node cleanup.js"
   },

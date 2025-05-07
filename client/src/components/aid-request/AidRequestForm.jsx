@@ -167,11 +167,9 @@ const AidRequestForm = ({ onRequestSubmitted, request = null }) => {
       .map(item => `- ${item.name}: ${item.quantity} ${item.unit}`)
       .join('\n')}`;
   
-    const requestData = {
-      name: formData.name,
-      location: formData.location,
-      aidType: formData.aidType,
-      urgency: formData.urgency,
+    const requestPayload = {
+      ...formData,
+      priority: formData.urgency,
       notes: notesWithItems,
       status: 'pending',
       requestDate: new Date(),
@@ -184,9 +182,9 @@ const AidRequestForm = ({ onRequestSubmitted, request = null }) => {
     let result;
   
     if (isEditMode) {
-      result = await updateAidRequest(request.id, requestData);
+      result = await updateAidRequest(request.id, requestPayload);
     } else {
-      result = await createAidRequest(requestData);
+      result = await createAidRequest(requestPayload);
     }
   
     if (!result) {

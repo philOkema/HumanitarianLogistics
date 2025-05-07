@@ -12,7 +12,7 @@ const BeneficiaryPage: React.FC = () => {
   const myRequests: any[] = user?.role === 'beneficiary'
     ? (aidRequests as any[]).filter((r: any) => r.userId === user?.uid)
     : [];
-  const activeRequests = myRequests.filter((r: any) => ['pending', 'in_progress', 'approved', 'ready_for_pickup', 'in_transit'].includes(r.status));
+  const activeRequests = myRequests.filter((r: any) => ['pending', 'in_progress', 'approved', 'in_transit'].includes(r.status));
   const pastRequests = myRequests.filter((r: any) => ['delivered', 'denied', 'cancelled'].includes(r.status));
 
   // For admin/staff: group requests by beneficiary
@@ -33,7 +33,7 @@ const BeneficiaryPage: React.FC = () => {
 
   // Analytics for admin/staff
   const totalBeneficiaries = Object.keys(beneficiariesMap).length;
-  const totalActiveRequests = (aidRequests as any[]).filter((r: any) => ['pending', 'in_progress', 'approved', 'ready_for_pickup', 'in_transit'].includes(r.status)).length;
+  const totalActiveRequests = (aidRequests as any[]).filter((r: any) => ['pending', 'in_progress', 'approved', 'in_transit'].includes(r.status)).length;
   const totalCompleted = (aidRequests as any[]).filter((r: any) => r.status === 'delivered').length;
 
   return (

@@ -22,14 +22,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onCreateUser = exports.getAllUsers = exports.updateUserRole = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
-const cors_1 = __importDefault(require("cors"));
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
@@ -73,45 +69,42 @@ exports.updateUserRole = functions.https.onCall(async (data, context) => {
 });
 // Cloud Function to get all users (admin only)
 exports.getAllUsers = functions.https.onRequest(async (req, res) => {
-    // Enable CORS
-    return (0, cors_1.default)({
-        origin: [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            process.env.CLIENT_URL || 'https://humanitarianlogistics-d0b77.web.app'
-        ],
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization']
-    })(req, res, async () => {
-        try {
-            // Get the authorization token from the request header
-            const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                res.status(401).json({ error: 'Unauthorized: No token provided' });
-                return;
-            }
-            const token = authHeader.split('Bearer ')[1];
-            // Verify the token
-            const decodedToken = await auth.verifyIdToken(token);
-            const uid = decodedToken.uid;
-            // Check if the requesting user is an admin
-            const requesterDoc = await db.collection('users').doc(uid).get();
-            const requesterData = requesterDoc.data();
-            if (!requesterData || requesterData.role !== 'admin') {
-                res.status(403).json({ error: 'Forbidden: Only admins can view all users' });
-                return;
-            }
-            // Get all users from Firestore
-            const usersSnapshot = await db.collection('users').get();
-            const users = usersSnapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
-            res.status(200).json({ users });
+    // Handle CORS preflight
+    res.set('Access-Control-Allow-Origin', 'http://localhost:5173');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+    }
+    try {
+        // Get the authorization token from the request header
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).json({ error: 'Unauthorized: No token provided' });
+            return;
         }
-        catch (error) {
-            console.error('Error getting users:', error);
-            res.status(500).json({ error: 'Internal server error' });
+        const token = authHeader.split('Bearer ')[1];
+        // Verify the token
+        const decodedToken = await auth.verifyIdToken(token);
+        const uid = decodedToken.uid;
+        // Check if the requesting user is an admin
+        const requesterDoc = await db.collection('users').doc(uid).get();
+        const requesterData = requesterDoc.data();
+        if (!requesterData || requesterData.role !== 'admin') {
+            res.status(403).json({ error: 'Forbidden: Only admins can view all users' });
+            return;
         }
-    });
+        // Get all users from Firestore
+        const usersSnapshot = await db.collection('users').get();
+        const users = usersSnapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
+        res.status(200).json({ users });
+    }
+    catch (error) {
+        console.error('Error getting users:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 // Cloud Function to handle user creation
 exports.onCreateUser = functions.auth.user().onCreate(async (user) => {

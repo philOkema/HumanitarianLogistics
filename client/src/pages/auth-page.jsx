@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Redirect } from "wouter";
@@ -12,34 +12,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { USER_ROLES } from "@/context/UserContext";
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation, loading, logout } = useAuth();
+  const { user, loginMutation, registerMutation, loading, isInitialized } = useAuth();
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [redirectPath, setRedirectPath] = useState('');
   
-  console.log('AuthPage:', { user, loading, location, activeTab });
+  // Memoize the auth state to prevent unnecessary re-renders
+  const authState = useMemo(() => ({
+    isAuthenticated: !!user,
+    isLoading: loading || !isInitialized
+  }), [user, loading, isInitialized]);
   
-  // If user is already logged in, set flag to redirect to home
+  // Handle redirect after authentication
   useEffect(() => {
-    if (user && !shouldRedirect) {
-      console.log('AuthPage: User is authenticated, setting redirect flag');
+    if (!authState.isLoading && authState.isAuthenticated) {
+      const storedPath = sessionStorage.getItem('redirectAfterLogin') || '/home';
+      sessionStorage.removeItem('redirectAfterLogin');
+      setRedirectPath(storedPath);
       setShouldRedirect(true);
     }
-  }, [user, shouldRedirect]);
+  }, [authState]);
   
   // Set active tab based on the current route
   useEffect(() => {
-    const path = location.split('/')[1]; // Get the first path segment
-    console.log('AuthPage: Setting active tab based on path:', path);
+    const path = location.split('/')[1];
     if (path === 'login' || path === 'register') {
       setActiveTab(path);
     }
   }, [location]);
-
-  // Handle tab change - using useCallback to prevent recreation on each render
+  
+  // Handle tab change
   const handleTabChange = useCallback((value) => {
-    console.log('AuthPage: Tab changed to:', value);
     setActiveTab(value);
     setLocation(`/${value}`);
   }, [setLocation]);
@@ -56,14 +61,14 @@ export default function AuthPage() {
     username: "",
     password: "",
     confirmPassword: "",
-    role: USER_ROLES.BENEFICIARY, // Default role
+    role: USER_ROLES.BENEFICIARY,
     organization: ""
   });
   
   // Form validation state
   const [errors, setErrors] = useState({});
   
-  // Handle login form submission - using useCallback to prevent recreation on each render
+  // Handle login form submission
   const handleLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -84,13 +89,12 @@ export default function AuthPage() {
     }
   }, [loginData, loginMutation]);
   
-  // Handle register form submission - using useCallback to prevent recreation on each render
+  // Handle register form submission
   const handleRegisterSubmit = useCallback(async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
     
-    // Validate passwords match
     if (registerData.password !== registerData.confirmPassword) {
       setErrors(prev => ({
         ...prev,
@@ -117,22 +121,8 @@ export default function AuthPage() {
     }
   }, [registerData, registerMutation]);
   
-  // Handle input changes - using useCallback to prevent recreation on each render
-  const handleLoginInputChange = useCallback((field) => (e) => {
-    setLoginData(prev => ({ ...prev, [field]: e.target.value }));
-  }, []);
-  
-  const handleRegisterInputChange = useCallback((field) => (e) => {
-    setRegisterData(prev => ({ ...prev, [field]: e.target.value }));
-  }, []);
-  
-  const handleRoleChange = useCallback((value) => {
-    setRegisterData(prev => ({ ...prev, role: value }));
-  }, []);
-  
   // Show loading state while checking authentication
-  if (loading) {
-    console.log('AuthPage: Loading state');
+  if (authState.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -140,13 +130,11 @@ export default function AuthPage() {
     );
   }
   
-  // If user is already logged in, redirect to home
+  // If authenticated, redirect to home or stored path
   if (shouldRedirect) {
-    console.log('AuthPage: Redirecting to home');
-    return <Redirect to="/home" />;
+    return <Redirect to={redirectPath} />;
   }
   
-  console.log('AuthPage: Rendering auth form');
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md bg-gray-800 border-gray-700">
@@ -177,7 +165,7 @@ export default function AuthPage() {
                     type="email"
                     placeholder="Enter your email"
                     value={loginData.email}
-                    onChange={handleLoginInputChange('email')}
+                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
                     required
                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
@@ -190,7 +178,7 @@ export default function AuthPage() {
                     type="password"
                     placeholder="Enter your password"
                     value={loginData.password}
-                    onChange={handleLoginInputChange('password')}
+                    onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                     required
                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
@@ -224,9 +212,9 @@ export default function AuthPage() {
                   <Input
                     id="username"
                     type="text"
-                    placeholder="Choose a username"
+                    placeholder="Enter your username"
                     value={registerData.username}
-                    onChange={handleRegisterInputChange('username')}
+                    onChange={(e) => setRegisterData(prev => ({ ...prev, username: e.target.value }))}
                     required
                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
@@ -239,7 +227,33 @@ export default function AuthPage() {
                     type="email"
                     placeholder="Enter your email"
                     value={registerData.email}
-                    onChange={handleRegisterInputChange('email')}
+                    onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="register-password" className="text-gray-300">Password</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={registerData.password}
+                    onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
+                    required
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-gray-300">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={registerData.confirmPassword}
+                    onChange={(e) => setRegisterData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     required
                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                   />
@@ -247,49 +261,27 @@ export default function AuthPage() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="role" className="text-gray-300">Role</Label>
-                  <Select value={registerData.role} onValueChange={handleRoleChange}>
+                  <Select
+                    value={registerData.role}
+                    onValueChange={(value) => setRegisterData(prev => ({ ...prev, role: value }))}
+                  >
                     <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                      <SelectItem value={USER_ROLES.BENEFICIARY}>Beneficiary</SelectItem>
+                    <SelectContent>
                       <SelectItem value={USER_ROLES.DONOR}>Donor</SelectItem>
+                      <SelectItem value={USER_ROLES.BENEFICIARY}>Beneficiary</SelectItem>
                       <SelectItem value={USER_ROLES.VOLUNTEER}>Volunteer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-300">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={registerData.password}
-                    onChange={handleRegisterInputChange('password')}
-                    required
-                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-gray-300">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={registerData.confirmPassword}
-                    onChange={handleRegisterInputChange('confirmPassword')}
-                    required
-                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                  />
-                  {errors.confirmPassword && (
-                    <div className="text-sm text-red-400">{errors.confirmPassword}</div>
-                  )}
-                </div>
-                
                 {errors.register && (
                   <div className="text-sm text-red-400">{errors.register}</div>
+                )}
+                
+                {errors.confirmPassword && (
+                  <div className="text-sm text-red-400">{errors.confirmPassword}</div>
                 )}
                 
                 <Button 

@@ -319,7 +319,7 @@ export function registerRoutes(app: Express): Server {
       const requestId = req.params.id;
       const { status } = req.body;
       
-      if (!status || !["pending", "approved", "in_progress", "ready_for_pickup", "in_transit", "delivered", "denied", "cancelled"].includes(status)) {
+      if (!status || !["pending", "approved", "in_progress", "in_transit", "delivered", "denied", "cancelled"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
       

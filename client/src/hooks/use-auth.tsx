@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback, useRef } from "react";
 import { useMutation, useQueryClient, UseMutationResult } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -45,6 +45,7 @@ interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
   error: Error | null;
+  isInitialized: boolean;
   loginMutation: UseMutationResult<FirebaseUser, Error, LoginCredentials>;
   registerMutation: UseMutationResult<FirebaseUser, Error, RegisterData>;
   logoutMutation: UseMutationResult<void, Error, void>;
@@ -68,30 +69,76 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const authListenerRef = useRef<(() => void) | null>(null);
+
+  // Check for persisted auth state on mount
+  useEffect(() => {
+    const checkPersistedAuth = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          // If we have a persisted user, wait for token refresh
+          await currentUser.getIdToken(true);
+          setUser(currentUser);
+        }
+      } catch (err) {
+        console.error('Error checking persisted auth:', err);
+      } finally {
+        setIsFirstLoad(false);
+      }
+    };
+
+    checkPersistedAuth();
+  }, [auth]);
 
   useEffect(() => {
-    let mounted = true;
+    // Prevent multiple listener setups
+    if (authListenerRef.current) {
+      return;
+    }
+
     console.log('AuthProvider: Setting up auth state listener');
     
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!mounted) return;
-      
-      // Only update if the user state has actually changed
-      if (currentUser?.uid !== user?.uid) {
-        console.log('AuthProvider: Auth state changed:', { currentUser });
-        setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      try {
+        // Only update if the user state has actually changed
+        if (currentUser?.uid !== user?.uid) {
+          console.log('AuthProvider: Auth state changed:', { currentUser });
+          
+          // If we have a user, ensure we have their role
+          if (currentUser) {
+            // Add a small delay to ensure all auth state is properly initialized
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
+          setUser(currentUser);
+        }
+        
+        setLoading(false);
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('Auth state change error:', err);
+        setError(err instanceof Error ? err : new Error('Auth state change failed'));
+        setLoading(false);
+        setIsInitialized(true);
       }
-      setLoading(false);
     }, (err) => {
-      if (!mounted) return;
+      console.error('Auth state listener error:', err);
       setError(err);
       setLoading(false);
+      setIsInitialized(true);
     });
 
+    authListenerRef.current = unsubscribe;
+
     return () => {
-      mounted = false;
-      console.log('AuthProvider: Cleaning up auth state listener');
-      unsubscribe();
+      if (authListenerRef.current) {
+        console.log('AuthProvider: Cleaning up auth state listener');
+        authListenerRef.current();
+        authListenerRef.current = null;
+      }
     };
   }, [auth, user?.uid]);
 
@@ -123,9 +170,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         title: "Login successful",
         description: `Welcome back, ${user.email}!`,
       });
-      const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/home';
-      sessionStorage.removeItem('redirectAfterLogin');
-      setLocation(redirectPath);
+      // Add a small delay before redirecting to ensure auth state is properly set
+      setTimeout(() => {
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/home';
+        sessionStorage.removeItem('redirectAfterLogin');
+        setLocation(redirectPath);
+      }, 100);
     },
     onError: (error: Error) => {
       setError(error);
@@ -244,8 +294,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value = useMemo(() => ({
     user,
-    loading,
+    loading: loading || isFirstLoad,
     error,
+    isInitialized,
     loginMutation,
     registerMutation,
     logoutMutation,
@@ -256,7 +307,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }), [
     user,
     loading,
+    isFirstLoad,
     error,
+    isInitialized,
     loginMutation,
     registerMutation,
     logoutMutation,

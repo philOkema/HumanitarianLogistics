@@ -14,7 +14,9 @@ import {
   BarChart2,
   Truck,
   MessageSquare,
-  LogOut
+  LogOut,
+  MapPin,
+  Navigation
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -43,7 +45,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const navigationItems = [
     { path: '/home', label: 'Home', icon: <Home className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.DONOR, USER_ROLES.BENEFICIARY, USER_ROLES.VOLUNTEER, USER_ROLES.GUEST] },
-    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.BENEFICIARY, USER_ROLES.DONOR] },
+    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.BENEFICIARY, USER_ROLES.DONOR, USER_ROLES.VOLUNTEER] },
     { path: '/inventory', label: 'Inventory', icon: <Package className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.VOLUNTEER] },
     { path: '/donations', label: 'Donations', icon: <Gift className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.DONOR] },
     { path: '/distribution', label: 'Distribution', icon: <Truck className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.VOLUNTEER] },
@@ -53,16 +55,30 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/feedback', label: 'Feedback', icon: <MessageSquare className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.DONOR, USER_ROLES.BENEFICIARY, USER_ROLES.VOLUNTEER, USER_ROLES.GUEST] },
     { path: '/profile', label: 'Profile', icon: <User className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.DONOR, USER_ROLES.BENEFICIARY, USER_ROLES.VOLUNTEER] },
     { path: '/settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, roles: [USER_ROLES.ADMIN] },
+    { path: '/staff/location', label: 'Location Tracking', icon: <MapPin className="w-5 h-5" />, roles: [USER_ROLES.STAFF, USER_ROLES.VOLUNTEER] },
+    { path: '/delivery/123/track', label: 'Track Delivery', icon: <Navigation className="w-5 h-5" />, roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.BENEFICIARY, USER_ROLES.VOLUNTEER] },
   ];
 
-  const visibleItems = navigationItems.filter(item => 
-    item.roles.includes(user.role)
-  );
+  // Debug logs for role-based navigation
+  console.log('=== Navigation Debug ===');
+  console.log('Current user:', user);
+  console.log('Current user role:', user.role);
+  console.log('USER_ROLES:', USER_ROLES);
+  
+  const visibleItems = navigationItems.filter(item => {
+    const hasRole = item.roles.includes(user.role);
+    console.log(`Checking "${item.label}" (${item.path}):`);
+    console.log('- Required roles:', item.roles);
+    console.log('- User role:', user.role);
+    console.log('- Has access:', hasRole);
+    return hasRole;
+  });
 
-  // Debug logs for sidebar role issues
-  console.log('Sidebar user.role:', user.role);
-  console.log('Sidebar expected admin:', USER_ROLES.ADMIN);
-  console.log('Sidebar donations roles:', navigationItems.find(i => i.path === '/donations')?.roles);
+  console.log('=== Final Navigation Items ===');
+  console.log('Visible items for role:', user.role);
+  visibleItems.forEach(item => {
+    console.log(`- ${item.label} (${item.path})`);
+  });
 
   const handleLogout = () => {
     logout();

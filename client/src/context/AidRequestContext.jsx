@@ -8,7 +8,6 @@ export const REQUEST_STATUS = {
   PENDING: 'pending',
   APPROVED: 'approved',
   IN_PROGRESS: 'in_progress',
-  READY_FOR_PICKUP: 'ready_for_pickup',
   IN_TRANSIT: 'in_transit',
   DELIVERED: 'delivered',
   DENIED: 'denied',

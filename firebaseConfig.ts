@@ -12,6 +12,7 @@ export const firebaseConfig = {
   messagingSenderId: "874559986585",
   appId: "1:874559986585:web:cf16f3b1ed7a495f7bd108",
   measurementId: "G-G7CXG3Q4LL",
+  databaseURL: "https://humanitarianlogistics-d0b77-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
 // ✅ Initialize the Firebase app only once

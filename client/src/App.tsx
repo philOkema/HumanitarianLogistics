@@ -23,6 +23,8 @@ import FeedbackPage from './pages/FeedbackPage';
 import RequestPage from './pages/RequestPage';
 import AdminPage from './pages/AdminPage';
 import DeliveriesPage from './pages/DeliveriesPage';
+import DeliveryTracking from './pages/DeliveryTracking';
+import StaffLocationTracking from './pages/StaffLocationTracking';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -88,6 +90,14 @@ const App = () => {
                       
                       <Route path="/deliveries">
                         <RoleBasedRoute component={DeliveriesPage} requiredRoles={['volunteer']} />
+                      </Route>
+
+                      <Route path="/delivery/:deliveryId/track">
+                        <RoleBasedRoute component={DeliveryTracking} requiredRoles={['admin', 'staff', 'beneficiary']} />
+                      </Route>
+
+                      <Route path="/staff/location">
+                        <RoleBasedRoute component={StaffLocationTracking} requiredRoles={['staff', 'volunteer']} />
                       </Route>
                       
                       <Route path="/beneficiaries">

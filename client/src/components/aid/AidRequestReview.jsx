@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, getDoc, arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Box, 
@@ -87,13 +87,57 @@ const AidRequestReview = () => {
 
   const handleStatusChange = async (requestId, newStatus) => {
     try {
+      // If the request is being approved, update inventory quantities first
+      if (newStatus === 'approved') {
+        const request = requests.find(r => r.id === requestId);
+        if (!request) {
+          throw new Error('Request not found');
+        }
+
+        // Check all inventory items first before making any updates
+        for (const item of request.items) {
+          const inventoryRef = doc(db, 'inventories', item.itemId);
+          const inventoryDoc = await getDoc(inventoryRef);
+          if (!inventoryDoc.exists()) {
+            throw new Error(`Inventory item ${item.itemId} not found`);
+          }
+          const currentQuantity = inventoryDoc.data().quantity;
+          const newQuantity = currentQuantity - item.quantity;
+          if (newQuantity < 0) {
+            throw new Error(`Insufficient quantity available for item ${item.name}`);
+          }
+        }
+        // If all checks pass, update inventory
+        for (const item of request.items) {
+          const inventoryRef = doc(db, 'inventories', item.itemId);
+          const inventoryDoc = await getDoc(inventoryRef);
+          const currentQuantity = inventoryDoc.data().quantity;
+          const newQuantity = currentQuantity - item.quantity;
+          const historyEntry = {
+            action: 'adjust',
+            timestamp: new Date().toISOString(),
+            change: {
+              quantity: {
+                from: currentQuantity,
+                to: newQuantity,
+                change: -item.quantity
+              },
+              reason: `Reserved for aid request #${requestId}`
+            }
+          };
+          await updateDoc(inventoryRef, {
+            quantity: newQuantity,
+            lastUpdate: serverTimestamp(),
+            history: arrayUnion(historyEntry)
+          });
+        }
+      }
+      // Now update the request status (only if all inventory updates succeeded)
       const requestRef = doc(db, 'aid-requests', requestId);
       await updateDoc(requestRef, {
         status: newStatus,
         updatedAt: serverTimestamp()
       });
-      
-      // Update local state
       setRequests(prev => 
         prev.map(request => 
           request.id === requestId 
@@ -101,18 +145,16 @@ const AidRequestReview = () => {
             : request
         )
       );
-      
       toast({
         title: "Status Updated",
         description: `Request status has been updated to ${newStatus}.`,
       });
-      
       handleCloseDialog();
     } catch (error) {
       console.error('Error updating request status:', error);
       toast({
         title: "Error",
-        description: "Failed to update request status. Please try again.",
+        description: error.message || "Failed to update request status. Please try again.",
         variant: "destructive",
       });
     }

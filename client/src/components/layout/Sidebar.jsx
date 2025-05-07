@@ -13,7 +13,9 @@ import {
   LayoutDashboard,
   Shield,
   Menu,
-  X
+  X,
+  MapPin,
+  Navigation
 } from 'lucide-react';
 import { useUser, USER_ROLES } from '@/context/UserContext';
 import { useAuth } from '@/hooks/use-auth';
@@ -97,6 +99,18 @@ const Sidebar = () => {
       label: 'Inventory',
       roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.VOLUNTEER],
       permission: canManageInventory
+    },
+    { 
+      path: '/staff/location', 
+      icon: <MapPin className="w-5 h-5" />, 
+      label: 'Location Tracking',
+      roles: [USER_ROLES.STAFF, USER_ROLES.VOLUNTEER]
+    },
+    { 
+      path: '/delivery/123/track', 
+      icon: <Navigation className="w-5 h-5" />, 
+      label: 'Track Delivery',
+      roles: [USER_ROLES.ADMIN, USER_ROLES.STAFF, USER_ROLES.BENEFICIARY, USER_ROLES.VOLUNTEER]
     },
     { 
       path: '/settings', 

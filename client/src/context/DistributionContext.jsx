@@ -10,7 +10,6 @@ export const DISTRIBUTION_STATUS = {
   PENDING: 'pending',
   APPROVED: 'approved',
   IN_PROGRESS: 'in_progress',
-  READY_FOR_PICKUP: 'ready_for_pickup',
   IN_TRANSIT: 'in_transit',
   DELIVERED: 'delivered',
   DENIED: 'denied',
@@ -145,9 +144,6 @@ export const DistributionProvider = ({ children }) => {
           break;
         case DISTRIBUTION_STATUS.IN_PROGRESS:
           requestStatus = REQUEST_STATUS.IN_PROGRESS;
-          break;
-        case DISTRIBUTION_STATUS.READY_FOR_PICKUP:
-          requestStatus = REQUEST_STATUS.READY_FOR_PICKUP;
           break;
         case DISTRIBUTION_STATUS.IN_TRANSIT:
           requestStatus = REQUEST_STATUS.IN_TRANSIT;
