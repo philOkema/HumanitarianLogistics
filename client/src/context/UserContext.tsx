@@ -54,7 +54,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
 
     const fetchUserData = async () => {
-      if (authLoading) return;
+      // Always set loading to true when auth state changes
+      setLoading(true);
+
+      if (authLoading) {
+        return;
+      }
 
       if (!authUser) {
         if (isMounted) {
@@ -65,6 +70,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
+        console.log('Fetching user data for:', authUser.uid);
         // Get user document from Firestore
         const userDoc = await getDoc(doc(db, 'users', authUser.uid));
         
@@ -72,6 +78,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          console.log('User data from Firestore:', userData);
           const userWithRole: User = {
             ...authUser,
             role: userData.role || 'donor', // Default to donor if no role specified
@@ -94,7 +101,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } finally {
         if (isMounted) {
-          setLoading(false);
+          // Add a small delay to ensure state updates are processed
+          setTimeout(() => {
+            setLoading(false);
+          }, 100);
         }
       }
     };
@@ -107,7 +117,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [authUser, authLoading]);
 
   const hasRole = useMemo(() => (role: UserRole): boolean => {
-    return user?.role === role;
+    if (!user) return false;
+    return user.role === role;
   }, [user]);
 
   const hasPermission = useMemo(() => (permission: string): boolean => {

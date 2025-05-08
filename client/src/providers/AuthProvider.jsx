@@ -8,19 +8,30 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let unsubscribe;
 
     const initializeAuth = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        
         unsubscribe = onAuthStateChanged(auth, (user) => {
+          console.log('Auth state changed:', user ? 'User logged in' : 'No user');
           setUser(user);
+          setLoading(false);
+          setIsInitialized(true);
+        }, (error) => {
+          console.error('Auth state change error:', error);
+          setError(error);
           setLoading(false);
           setIsInitialized(true);
         });
       } catch (error) {
         console.error("Error initializing auth:", error);
+        setError(error);
         setLoading(false);
         setIsInitialized(true);
       }
@@ -39,6 +50,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     isInitialized,
+    error
   };
 
   return (

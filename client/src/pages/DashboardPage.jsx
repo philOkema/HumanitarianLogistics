@@ -13,10 +13,11 @@ export default function DashboardPage() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!authLoading && !authUser) {
+    if (!authLoading && !userLoading && (!authUser || !user)) {
+      console.log('DashboardPage: Redirecting to login', { authUser, user });
       setLocation("/auth?type=login");
     }
-  }, [authUser, authLoading, setLocation]);
+  }, [authUser, authLoading, user, userLoading, setLocation]);
 
   // Show loading state
   if (userLoading || authLoading) {
@@ -29,6 +30,7 @@ export default function DashboardPage() {
 
   // Show error state if no user data
   if (!user || !authUser) {
+    console.log('DashboardPage: No user data', { user, authUser });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md bg-white/10 border-0">
@@ -101,7 +103,7 @@ export default function DashboardPage() {
                   <Button className="w-full bg-transparent text-white border-white hover:bg-white/10" variant="outline" onClick={() => setLocation('/request')}>
                     View My Aid Requests
                   </Button>
-                  <Button className="w-full bg-transparent text-white border-white hover:bg-white/10" variant="outline" onClick={() => setLocation('/deliveries')}>
+                  <Button className="w-full bg-transparent text-white border-white hover:bg-white/10" variant="outline" onClick={() => setLocation('/delivery/:deliveryId/track')}>
                     Track My Shipments
                   </Button>
                 </>

@@ -283,7 +283,14 @@ export function registerRoutes(app: Express): Server {
   // Aid Request Routes
   app.get("/api/aid-requests", authenticateFirebaseToken, async (req, res) => {
     try {
-      const requests = await storage.getAidRequests();
+      const user = req.user as unknown as { role: string; uid: string };
+      let requests = await storage.getAidRequests();
+      
+      // If user is a beneficiary, only show their own requests
+      if (user.role === 'beneficiary') {
+        requests = requests.filter(request => request.userId === user.uid);
+      }
+      
       res.status(200).json({ requests });
     } catch (error) {
       res.status(500).json({ message: "Error fetching aid requests" });

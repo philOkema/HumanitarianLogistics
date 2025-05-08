@@ -113,11 +113,18 @@ export function AidRequestProvider({ children }) {
       }
       
       const data = await response.json();
-      setAidRequests(data.requests || []);
+      
+      // Additional client-side filtering for beneficiaries
+      let filteredRequests = data.requests || [];
+      if (user.role === 'beneficiary') {
+        filteredRequests = filteredRequests.filter(request => request.userId === user.uid);
+      }
+      
+      setAidRequests(filteredRequests);
       setLastUpdate(new Date());
       
       // Cache the requests
-      localStorage.setItem('aidRequests', JSON.stringify(data.requests || []));
+      localStorage.setItem('aidRequests', JSON.stringify(filteredRequests));
     } catch (err) {
       console.error('Error fetching aid requests:', err);
       setError('Failed to load aid requests. Please try again later.');

@@ -91,18 +91,16 @@ const FeedbackPage = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8">
-      <h2 className="text-xl font-semibold mb-6">SEND US FEEDBACK</h2>
-      
-      <div className="max-w-2xl mx-auto">
-        <p className="text-gray-600 mb-6">
-          Your feedback helps us improve our humanitarian aid distribution system. 
-          Please share your thoughts, suggestions, or report any issues you've encountered.
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-8 px-2">
+      <div className="w-full max-w-2xl bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700">
+        <h2 className="text-2xl font-bold mb-2 text-white">SEND US FEEDBACK</h2>
+        <p className="mb-6 text-gray-300">
+          Your feedback helps us improve our humanitarian aid distribution system. Please share your thoughts, suggestions, or report any issues you've encountered.
         </p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-1">
               Your Name
             </label>
             <input
@@ -111,13 +109,13 @@ const FeedbackPage = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Your name (optional)"
             />
           </div>
           
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-1">
               Your Email
             </label>
             <input
@@ -126,13 +124,13 @@ const FeedbackPage = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Your email (optional)"
             />
           </div>
           
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="subject" className="block text-sm font-medium text-gray-200 mb-1">
               Feedback Category
             </label>
             <select
@@ -140,7 +138,7 @@ const FeedbackPage = () => {
               name="subject"
               value={formData.subject}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             >
               <option value="general">General Feedback</option>
               <option value="bug">Report a Bug</option>
@@ -153,7 +151,7 @@ const FeedbackPage = () => {
           </div>
           
           <div>
-            <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="rating" className="block text-sm font-medium text-gray-200 mb-1">
               How would you rate your experience? (1-10)
             </label>
             <input
@@ -164,9 +162,9 @@ const FeedbackPage = () => {
               max="10"
               value={formData.rating}
               onChange={handleChange}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
               <span>1</span>
               <span>2</span>
               <span>3</span>
@@ -178,11 +176,11 @@ const FeedbackPage = () => {
               <span>9</span>
               <span>10</span>
             </div>
-            <p className="text-center mt-2">Your rating: {formData.rating}/10</p>
+            <p className="text-center mt-2 text-gray-300">Your rating: {formData.rating}/10</p>
           </div>
           
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="message" className="block text-sm font-medium text-gray-200 mb-1">
               Your Feedback
             </label>
             <textarea
@@ -192,7 +190,7 @@ const FeedbackPage = () => {
               value={formData.message}
               onChange={handleChange}
               placeholder="Please share your thoughts, suggestions, or report any issues..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               required
             />
           </div>
@@ -203,15 +201,16 @@ const FeedbackPage = () => {
               variant="default"
               size="lg"
               disabled={isSubmitting}
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               {isSubmitting ? "Submitting..." : "Submit Feedback"}
             </Button>
           </div>
         </form>
         
-        <div className="mt-8 text-center text-gray-600">
+        <div className="mt-8 text-center text-gray-300">
           <p>If you need immediate assistance, please contact us at:</p>
-          <p className="font-medium">support@hads.org</p>
+          <p className="font-medium text-white">support@hads.org</p>
         </div>
       </div>
     </div>
